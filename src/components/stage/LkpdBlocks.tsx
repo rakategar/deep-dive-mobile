@@ -1,5 +1,15 @@
-import { useState } from "react";
-import { Database, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, FileSpreadsheet } from "lucide-react";
+import { useRef, useState } from "react";
+import { Database, Pause, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, Trash2, FileSpreadsheet } from "lucide-react";
+import { DopplerWaveCanvas, type DopplerWaveCanvasHandle } from "./DopplerWaveCanvas";
+import { toast } from "@/hooks/use-toast";
+
+interface DopplerEntry {
+  no: number;
+  mode: "approach" | "leave";
+  fs: number;
+  vs: number;
+  fp: string;
+}
 
 export const ObservationLKPD = () => (
   <div className="space-y-3">
