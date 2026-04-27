@@ -124,10 +124,28 @@ export const HypothesisLKPD = () => (
 export const SimulatorLKPD = () => {
   const [direction, setDirection] = useState<"approach" | "leave">("approach");
   const [vs, setVs] = useState(60);
-  const fs = 300;
+  const [fs, setFs] = useState(300);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [entries, setEntries] = useState<DopplerEntry[]>([]);
+  const canvasRef = useRef<DopplerWaveCanvasHandle>(null);
+
   const v = 343;
-  const denom = direction === "approach" ? v - vs : v + vs;
+  const safeVs = Math.min(vs, 300);
+  const denom = direction === "approach" ? v - safeVs : v + safeVs;
   const fp = ((fs * v) / denom).toFixed(1);
+
+  const fsPercent = ((fs - 100) / 900) * 100;
+
+  const handleRecord = () => {
+    setEntries((prev) => [
+      ...prev,
+      { no: prev.length + 1, mode: direction, fs, vs: safeVs, fp },
+    ]);
+    toast({ title: "Data tercatat", description: `f' = ${fp} Hz pada vₛ = ${safeVs} m/s` });
+  };
+
+  const handleClear = () => setEntries([]);
+  const handleReset = () => canvasRef.current?.reset();
 
   return (
     <div className="space-y-3">
@@ -135,21 +153,35 @@ export const SimulatorLKPD = () => {
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold">Visualisasi Muka Gelombang</p>
           <div className="flex gap-1">
-            <button className="h-7 w-7 rounded-md bg-lkpd/15 text-lkpd flex items-center justify-center">
-              <Play className="h-3.5 w-3.5" />
+            <button
+              onClick={() => setIsPlaying((p) => !p)}
+              className="h-7 w-7 rounded-md bg-lkpd/15 text-lkpd flex items-center justify-center"
+              aria-label={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
             </button>
-            <button className="h-7 w-7 rounded-md bg-muted flex items-center justify-center">
+            <button
+              onClick={handleReset}
+              className="h-7 w-7 rounded-md bg-muted flex items-center justify-center"
+              aria-label="Reset"
+            >
               <RotateCcw className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
-        <DopplerSim direction={direction} />
+        <DopplerWaveCanvas
+          ref={canvasRef}
+          frequency={fs}
+          sourceSpeed={safeVs}
+          mode={direction}
+          isPlaying={isPlaying}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => setDirection("approach")}
-          className={`rounded-xl border p-2 text-sm ${
+          className={`rounded-xl border p-2 text-sm transition-colors ${
             direction === "approach"
               ? "border-emerald-400 bg-emerald-50 text-emerald-700"
               : "border-border bg-card text-foreground/70"
@@ -159,9 +191,9 @@ export const SimulatorLKPD = () => {
         </button>
         <button
           onClick={() => setDirection("leave")}
-          className={`rounded-xl border p-2 text-sm ${
+          className={`rounded-xl border p-2 text-sm transition-colors ${
             direction === "leave"
-              ? "border-rose-300 bg-rose-50 text-rose-700"
+              ? "border-emerald-400 bg-emerald-50 text-emerald-700"
               : "border-border bg-card text-foreground/70"
           }`}
         >
@@ -174,15 +206,21 @@ export const SimulatorLKPD = () => {
           <span>Frekuensi Sumber (f₀)</span>
           <span className="font-bold text-info">{fs} Hz</span>
         </div>
-        <div className="h-1.5 bg-info/15 rounded-full overflow-hidden">
-          <div className="h-full bg-info" style={{ width: "30%" }} />
-        </div>
+        <input
+          type="range"
+          min={100}
+          max={1000}
+          step={10}
+          value={fs}
+          onChange={(e) => setFs(Number(e.target.value))}
+          className="w-full accent-info"
+        />
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>100 Hz</span><span>1000 Hz</span>
+          <span>100 Hz</span><span>{Math.round(fsPercent)}%</span><span>1000 Hz</span>
         </div>
         <div className="flex justify-between text-sm pt-2">
           <span>Kecepatan Sumber (vₛ)</span>
-          <span className="font-bold text-lkpd">{vs} m/s</span>
+          <span className="font-bold text-lkpd">{safeVs} m/s</span>
         </div>
         <input
           type="range"
@@ -213,50 +251,69 @@ export const SimulatorLKPD = () => {
         </div>
       </div>
 
-      <button className="w-full rounded-xl bg-lkpd text-white py-3 font-semibold flex items-center justify-center gap-2">
+      <button
+        onClick={handleRecord}
+        className="w-full rounded-xl bg-lkpd text-white py-3 font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+      >
         <Database className="h-4 w-4" /> Catat Data
       </button>
+
       <div className="rounded-xl bg-card border border-border p-3 text-sm">
-        <p className="font-semibold">Data yang Terkumpul</p>
-        <p className="text-xs text-muted-foreground text-center mt-3">
-          Belum ada data. Atur parameter lalu tekan "Catat Data".
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="font-semibold">Data yang Terkumpul</p>
+          {entries.length > 0 && (
+            <button
+              onClick={handleClear}
+              className="text-xs text-rose-600 flex items-center gap-1 hover:underline"
+            >
+              <Trash2 className="h-3 w-3" /> Hapus Data
+            </button>
+          )}
+        </div>
+        {entries.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center mt-3">
+            Belum ada data. Atur parameter lalu tekan "Catat Data".
+          </p>
+        ) : (
+          <div className="mt-2 overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-xs">
+              <thead className="bg-muted">
+                <tr className="text-left">
+                  <th className="p-2 font-semibold">No</th>
+                  <th className="p-2 font-semibold">Mode</th>
+                  <th className="p-2 font-semibold">f₀</th>
+                  <th className="p-2 font-semibold">vₛ</th>
+                  <th className="p-2 font-semibold">f'</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e) => (
+                  <tr key={e.no} className="border-t border-border animate-fade-in">
+                    <td className="p-2">{e.no}</td>
+                    <td className="p-2">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          e.mode === "approach"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {e.mode === "approach" ? "Mendekati" : "Menjauh"}
+                      </span>
+                    </td>
+                    <td className="p-2">{e.fs}</td>
+                    <td className="p-2 font-bold">{e.vs}</td>
+                    <td className="p-2 font-bold text-lkpd">{e.fp}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
-const DopplerSim = ({ direction }: { direction: "approach" | "leave" }) => (
-  <svg viewBox="0 0 340 160" className="w-full mt-2">
-    <defs>
-      <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="hsl(var(--surface-soft-purple))" />
-        <stop offset="100%" stopColor="hsl(var(--surface-pink))" />
-      </linearGradient>
-    </defs>
-    <rect width="340" height="160" rx="12" fill="url(#bg)" />
-    {[20, 38, 56, 74, 92].map((r, i) => (
-      <circle
-        key={r}
-        cx={direction === "approach" ? 100 + i * 4 : 100 - i * 2}
-        cy={80}
-        r={r}
-        fill="none"
-        stroke="hsl(var(--lkpd) / 0.45)"
-        strokeWidth={1.2}
-      />
-    ))}
-    <circle cx={100} cy={80} r={14} fill="hsl(var(--stage-5))" />
-    <text x={100} y={84} textAnchor="middle" fontSize={10} fill="white" fontWeight="bold">S</text>
-    <text x={100} y={108} textAnchor="middle" fontSize={9} fill="hsl(var(--foreground))">Sumber</text>
-    <circle cx={290} cy={80} r={14} fill="hsl(var(--stage-3))" />
-    <text x={290} y={84} textAnchor="middle" fontSize={10} fill="white" fontWeight="bold">P</text>
-    <text x={290} y={108} textAnchor="middle" fontSize={9} fill="hsl(var(--foreground))">Pengamat</text>
-    <text x={170} y={30} textAnchor="middle" fontSize={9} fill="hsl(var(--stage-3))">
-      → {direction === "approach" ? "Mendekati Pengamat" : "Menjauhi Pengamat"}
-    </text>
-  </svg>
-);
 
 export const DataTableLKPD = () => {
   const rows = [0, 30, 60, 90, 120, 150, 180, 200];
