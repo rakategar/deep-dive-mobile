@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ["'Cormorant Garamond'", "Georgia", "serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -46,6 +50,22 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        info: "hsl(var(--info))",
+        lkpd: "hsl(var(--lkpd))",
+        stage: {
+          1: "hsl(var(--stage-1))",
+          2: "hsl(var(--stage-2))",
+          3: "hsl(var(--stage-3))",
+          4: "hsl(var(--stage-4))",
+          5: "hsl(var(--stage-5))",
+          6: "hsl(var(--stage-6))",
+        },
+        surface: {
+          cream: "hsl(var(--surface-cream))",
+          pink: "hsl(var(--surface-pink))",
+          "soft-blue": "hsl(var(--surface-soft-blue))",
+          "soft-purple": "hsl(var(--surface-soft-purple))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
