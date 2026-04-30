@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/clerkPublishableKey";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { PublicOnly } from "@/components/auth/PublicOnly";
 import Splash from "./pages/Splash";
 import Welcome from "./pages/Welcome";
 import SignUp from "./pages/SignUp";
@@ -34,10 +35,11 @@ const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<Splash />} />
-      <Route path="/welcome" element={<Welcome />} />
-      <Route path="/signup" element={<SignUp />} />
+      <Route path="/welcome" element={<PublicOnly><Welcome /></PublicOnly>} />
+      <Route path="/signup" element={<PublicOnly><SignUp /></PublicOnly>} />
+      <Route path="/register" element={<PublicOnly><SignUp /></PublicOnly>} />
       <Route path="/create-password" element={<CreatePassword />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
       <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
       <Route path="/stage/:slug" element={<RequireAuth><Stage /></RequireAuth>} />
       <Route path="/certificate" element={<RequireAuth><Certificate /></RequireAuth>} />
