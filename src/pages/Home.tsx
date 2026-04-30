@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Info, Brain, BookOpen, FileText, Pencil, Waves } from "lucide-react";
+import { UserButton } from "@clerk/clerk-react";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { stages } from "@/data/stages";
 
@@ -7,14 +8,15 @@ const Home = () => {
   return (
     <MobileShell>
       <div className="min-h-screen safe-px pt-12 pb-12">
-        {/* Top right info */}
-        <div className="flex justify-end">
+        {/* Top right info + user */}
+        <div className="flex justify-end items-center gap-2">
           <button
             aria-label="Info"
             className="h-9 w-9 rounded-full border border-border flex items-center justify-center text-foreground/60"
           >
             <Info className="h-4 w-4" />
           </button>
+          <UserButton afterSignOutUrl="/login" appearance={{ elements: { avatarBox: "h-9 w-9" } }} />
         </div>
 
         {/* Brand mark */}

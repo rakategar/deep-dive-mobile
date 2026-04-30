@@ -1,5 +1,6 @@
 import { ChevronLeft, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { UserButton } from "@clerk/clerk-react";
 
 interface StageHeaderProps {
   title: string;
@@ -21,13 +22,16 @@ export const StageHeader = ({ title, subtitle }: StageHeaderProps) => {
         <h1 className="text-base font-semibold text-foreground leading-tight">{title}</h1>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
-      <button
-        aria-label="Beranda"
-        onClick={() => navigate("/home")}
-        className="h-10 w-10 -mr-2 flex items-center justify-center text-foreground/70 hover:text-primary transition-colors"
-      >
-        <Home className="h-5 w-5" strokeWidth={2} />
-      </button>
+      <div className="flex items-center gap-1 -mr-2">
+        <button
+          aria-label="Beranda"
+          onClick={() => navigate("/home")}
+          className="h-10 w-10 flex items-center justify-center text-foreground/70 hover:text-primary transition-colors"
+        >
+          <Home className="h-5 w-5" strokeWidth={2} />
+        </button>
+        <UserButton afterSignOutUrl="/login" appearance={{ elements: { avatarBox: "h-8 w-8" } }} />
+      </div>
     </header>
   );
 };

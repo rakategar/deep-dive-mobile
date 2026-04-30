@@ -1,20 +1,25 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import { MobileShell } from "@/components/layout/MobileShell";
 
 const Splash = () => {
   const navigate = useNavigate();
+  const { isLoaded, isSignedIn } = useAuth();
 
   useEffect(() => {
-    const t = setTimeout(() => navigate("/welcome"), 1800);
+    if (!isLoaded) return;
+    const t = setTimeout(() => {
+      navigate(isSignedIn ? "/home" : "/welcome", { replace: true });
+    }, 1200);
     return () => clearTimeout(t);
-  }, [navigate]);
+  }, [navigate, isLoaded, isSignedIn]);
 
   return (
     <MobileShell className="!bg-primary">
       <div className="min-h-screen flex flex-col items-center justify-center bg-primary text-primary-foreground">
         <button
-          onClick={() => navigate("/welcome")}
+          onClick={() => navigate(isSignedIn ? "/home" : "/welcome", { replace: true })}
           className="font-display text-6xl italic tracking-tight underline underline-offset-[10px] decoration-[1.5px]"
         >
           indeep
