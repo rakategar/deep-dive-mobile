@@ -78,6 +78,8 @@ const SignUp = () => {
             <span className="font-medium">{googleLoading ? "Menghubungkan..." : "Register with Google"}</span>
           </button>
 
+          <div id="clerk-captcha" className="mt-2" />
+
           <p className="text-xs text-center text-primary/70 mt-4 leading-relaxed">
             By clicking continue, you
             <br />
