@@ -1,1 +1,4 @@
 project_id = "znxharkbjgxomajqwtfz"
+
+[functions.append-doppler-data]
+verify_jwt = false
