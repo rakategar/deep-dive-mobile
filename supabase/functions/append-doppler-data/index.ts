@@ -4,7 +4,12 @@
 // - Calculates next "No" by reading existing rows from Database!A7:A
 // - Appends to Database!A:I with USER_ENTERED so f₀, vs, f' stay numeric
 
-import { corsHeaders } from "@supabase/supabase-js/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 interface DopplerPayload {
   mode: "Mendekati" | "Menjauh";
