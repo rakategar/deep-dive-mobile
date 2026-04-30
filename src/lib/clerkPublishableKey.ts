@@ -1,5 +1,10 @@
-// Publishable key is safe to expose to the browser (it's the publishable Clerk key, by design).
-// Vite only injects env vars prefixed with VITE_. Add this to your .env file:
-//   VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxx
+// Clerk publishable key — aman dibundel ke browser (by design Clerk).
+// .env di Lovable auto-generated dan tidak bisa diedit manual, jadi key
+// di-set langsung di sini sebagai fallback. Untuk ganti instance Clerk,
+// update nilai DEFAULT_CLERK_PUBLISHABLE_KEY di bawah.
+const DEFAULT_CLERK_PUBLISHABLE_KEY =
+  "pk_test_cmVsYXhpbmctcGlwZWZpc2gtMjQuY2xlcmsuYWNjb3VudHMuZGV2JA";
+
 export const CLERK_PUBLISHABLE_KEY =
-  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined) ?? "";
+  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined) ??
+  DEFAULT_CLERK_PUBLISHABLE_KEY;
