@@ -42,7 +42,15 @@ const AppRoutes = () => (
       <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
       <Route
         path="/sso-callback"
-        element={<AuthenticateWithRedirectCallback signInFallbackRedirectUrl="/home" signUpFallbackRedirectUrl="/home" />}
+        element={
+          <AuthenticateWithRedirectCallback
+            signInForceRedirectUrl="/home"
+            signUpForceRedirectUrl="/home"
+            signInFallbackRedirectUrl="/home"
+            signUpFallbackRedirectUrl="/home"
+            continueSignUpUrl="/home"
+          />
+        }
       />
       <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
       <Route path="/stage/:slug" element={<RequireAuth><Stage /></RequireAuth>} />
