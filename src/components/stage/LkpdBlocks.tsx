@@ -1,7 +1,10 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { Database, Pause, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, Trash2, FileSpreadsheet } from "lucide-react";
 import { DopplerWaveCanvas, type DopplerWaveCanvasHandle } from "./DopplerWaveCanvas";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DopplerEntry {
   no: number;
@@ -10,6 +13,7 @@ interface DopplerEntry {
   vs: number;
   fp: string;
 }
+
 
 export const ObservationLKPD = () => (
   <div className="space-y-3">
@@ -127,7 +131,11 @@ export const SimulatorLKPD = () => {
   const [fs, setFs] = useState(300);
   const [isPlaying, setIsPlaying] = useState(true);
   const [entries, setEntries] = useState<DopplerEntry[]>([]);
+  const [recording, setRecording] = useState(false);
   const canvasRef = useRef<DopplerWaveCanvasHandle>(null);
+  const navigate = useNavigate();
+  const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
 
   const v = 343;
   const safeVs = Math.min(vs, 300);
@@ -136,13 +144,56 @@ export const SimulatorLKPD = () => {
 
   const fsPercent = ((fs - 100) / 900) * 100;
 
-  const handleRecord = () => {
-    setEntries((prev) => [
-      ...prev,
-      { no: prev.length + 1, mode: direction, fs, vs: safeVs, fp },
-    ]);
-    toast({ title: "Data tercatat", description: `f' = ${fp} Hz pada vₛ = ${safeVs} m/s` });
+  const handleRecord = async () => {
+    if (!isSignedIn || !user) {
+      toast({
+        title: "Login dulu",
+        description: "Kamu perlu login untuk mencatat data ke spreadsheet.",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+    setRecording(true);
+    try {
+      const token = await getToken();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/append-doppler-data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            mode: direction === "approach" ? "Mendekati" : "Menjauh",
+            fs,
+            vs: safeVs,
+            fp: Number(fp),
+          }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Gagal mencatat data");
+
+      setEntries((prev) => [
+        ...prev,
+        { no: data.no ?? prev.length + 1, mode: direction, fs, vs: safeVs, fp },
+      ]);
+      toast({ title: "Data berhasil dicatat", description: `f' = ${fp} Hz pada vₛ = ${safeVs} m/s` });
+    } catch (err: any) {
+      console.error("catat-data error", err);
+      toast({
+        title: "Gagal mencatat",
+        description: err?.message ?? "Coba lagi sebentar.",
+        variant: "destructive",
+      });
+    } finally {
+      setRecording(false);
+    }
   };
+
 
   const handleClear = () => setEntries([]);
   const handleReset = () => canvasRef.current?.reset();
