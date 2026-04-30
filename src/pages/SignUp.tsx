@@ -9,6 +9,7 @@ const SignUp = () => {
   const navigate = useNavigate();
   const { signUp, isLoaded } = useSignUp();
   const [email, setEmail] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleContinue = () => {
     if (!email) {
@@ -20,14 +21,16 @@ const SignUp = () => {
   };
 
   const handleGoogle = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || !signUp) return;
     try {
+      setGoogleLoading(true);
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: `${window.location.origin}/signup`,
+        redirectUrl: `${window.location.origin}/sso-callback`,
         redirectUrlComplete: `${window.location.origin}/home`,
       });
     } catch (err: any) {
+      setGoogleLoading(false);
       toast({ title: "Google sign-up gagal", description: err?.message ?? "Coba lagi.", variant: "destructive" });
     }
   };
@@ -52,6 +55,7 @@ const SignUp = () => {
           />
 
           <button
+            type="button"
             onClick={handleContinue}
             className="w-full mt-3 py-3 rounded-full bg-primary text-primary-foreground font-display text-lg shadow-card active:scale-[0.99] transition"
           >
@@ -65,11 +69,13 @@ const SignUp = () => {
           </div>
 
           <button
+            type="button"
             onClick={handleGoogle}
-            className="w-full py-3 rounded-full bg-card text-foreground flex items-center justify-center gap-3 shadow-card active:scale-[0.99] transition"
+            disabled={!isLoaded || googleLoading}
+            className="w-full py-3 rounded-full bg-card text-foreground flex items-center justify-center gap-3 shadow-card active:scale-[0.99] transition disabled:opacity-60"
           >
             <GoogleIcon />
-            <span className="font-medium">Register with Google</span>
+            <span className="font-medium">{googleLoading ? "Menghubungkan..." : "Register with Google"}</span>
           </button>
 
           <p className="text-xs text-center text-primary/70 mt-4 leading-relaxed">

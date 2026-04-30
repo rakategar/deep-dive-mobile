@@ -11,6 +11,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleEmailLogin = async () => {
     if (!isLoaded) return;
@@ -39,14 +40,16 @@ const Login = () => {
   };
 
   const handleGoogle = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || !signIn) return;
     try {
+      setGoogleLoading(true);
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: `${window.location.origin}/login`,
+        redirectUrl: `${window.location.origin}/sso-callback`,
         redirectUrlComplete: `${window.location.origin}/home`,
       });
     } catch (err: any) {
+      setGoogleLoading(false);
       toast({ title: "Google sign-in gagal", description: err?.message ?? "Coba lagi.", variant: "destructive" });
     }
   };
@@ -78,6 +81,7 @@ const Login = () => {
               className="w-full px-4 py-3 rounded-full bg-card text-foreground placeholder:text-primary/40 outline-none focus:ring-2 focus:ring-primary/30"
             />
             <button
+              type="button"
               onClick={handleEmailLogin}
               disabled={loading}
               className="w-full py-3 rounded-full bg-primary text-primary-foreground font-display text-lg shadow-card active:scale-[0.99] transition disabled:opacity-60"
@@ -92,11 +96,13 @@ const Login = () => {
             </div>
 
             <button
+              type="button"
               onClick={handleGoogle}
-              className="w-full py-3 rounded-full bg-card text-foreground flex items-center justify-center gap-3 shadow-card active:scale-[0.99] transition"
+              disabled={!isLoaded || googleLoading}
+              className="w-full py-3 rounded-full bg-card text-foreground flex items-center justify-center gap-3 shadow-card active:scale-[0.99] transition disabled:opacity-60"
             >
               <GoogleIcon />
-              <span className="font-medium">Login with Google</span>
+              <span className="font-medium">{googleLoading ? "Menghubungkan..." : "Login with Google"}</span>
             </button>
           </div>
         </div>

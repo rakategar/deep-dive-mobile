@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { ClerkProvider } from "@clerk/clerk-react";
+import { AuthenticateWithRedirectCallback, ClerkProvider } from "@clerk/clerk-react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,6 +40,10 @@ const AppRoutes = () => (
       <Route path="/register" element={<PublicOnly><SignUp /></PublicOnly>} />
       <Route path="/create-password" element={<CreatePassword />} />
       <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
+      <Route
+        path="/sso-callback"
+        element={<AuthenticateWithRedirectCallback signInFallbackRedirectUrl="/home" signUpFallbackRedirectUrl="/home" />}
+      />
       <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
       <Route path="/stage/:slug" element={<RequireAuth><Stage /></RequireAuth>} />
       <Route path="/certificate" element={<RequireAuth><Certificate /></RequireAuth>} />
@@ -54,7 +58,12 @@ const App = () => (
       <Toaster />
       <Sonner />
       {CLERK_PUBLISHABLE_KEY ? (
-        <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} afterSignOutUrl="/login">
+        <ClerkProvider
+          publishableKey={CLERK_PUBLISHABLE_KEY}
+          afterSignOutUrl="/login"
+          signInFallbackRedirectUrl="/home"
+          signUpFallbackRedirectUrl="/home"
+        >
           <AppRoutes />
         </ClerkProvider>
       ) : (
