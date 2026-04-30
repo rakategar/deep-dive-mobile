@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignIn, useAuth } from "@clerk/clerk-react";
+import { useSignIn } from "@clerk/clerk-react";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { toast } from "@/hooks/use-toast";
 import buddyLogin from "@/assets/avatars/buddy-login.png";
@@ -8,14 +8,9 @@ import buddyLogin from "@/assets/avatars/buddy-login.png";
 const Login = () => {
   const navigate = useNavigate();
   const { signIn, isLoaded, setActive } = useSignIn();
-  const { isSignedIn } = useAuth();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [loading, setLoading] = useState(false);
-
-  if (isSignedIn) {
-    navigate("/home", { replace: true });
-  }
 
   const handleEmailLogin = async () => {
     if (!isLoaded) return;
