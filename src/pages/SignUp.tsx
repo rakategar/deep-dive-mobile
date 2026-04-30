@@ -1,20 +1,41 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSignUp } from "@clerk/clerk-react";
 import { MobileShell } from "@/components/layout/MobileShell";
+import { toast } from "@/hooks/use-toast";
 import buddySignup from "@/assets/avatars/buddy-signup.png";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { signUp, isLoaded } = useSignUp();
   const [email, setEmail] = useState("");
+
+  const handleContinue = () => {
+    if (!email) {
+      toast({ title: "Email kosong", description: "Masukkan email terlebih dahulu.", variant: "destructive" });
+      return;
+    }
+    // Lanjut ke layar password — pembuatan akun terjadi di sana.
+    navigate("/create-password", { state: { email } });
+  };
+
+  const handleGoogle = async () => {
+    if (!isLoaded) return;
+    try {
+      await signUp.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: `${window.location.origin}/signup`,
+        redirectUrlComplete: `${window.location.origin}/home`,
+      });
+    } catch (err: any) {
+      toast({ title: "Google sign-up gagal", description: err?.message ?? "Coba lagi.", variant: "destructive" });
+    }
+  };
 
   return (
     <MobileShell>
       <div className="min-h-screen flex flex-col items-center px-6 pt-12">
-        <img
-          src={buddySignup}
-          alt="Karakter sambutan"
-          className="w-48 h-48 object-contain"
-        />
+        <img src={buddySignup} alt="Karakter sambutan" className="w-48 h-48 object-contain" />
 
         <div className="w-full bg-secondary rounded-3xl p-6 -mt-4 shadow-card">
           <h2 className="font-display text-3xl text-primary text-center">Create an account</h2>
@@ -31,7 +52,7 @@ const SignUp = () => {
           />
 
           <button
-            onClick={() => navigate("/create-password")}
+            onClick={handleContinue}
             className="w-full mt-3 py-3 rounded-full bg-primary text-primary-foreground font-display text-lg shadow-card active:scale-[0.99] transition"
           >
             Sign up with email
@@ -44,11 +65,11 @@ const SignUp = () => {
           </div>
 
           <button
-            onClick={() => navigate("/home")}
+            onClick={handleGoogle}
             className="w-full py-3 rounded-full bg-card text-foreground flex items-center justify-center gap-3 shadow-card active:scale-[0.99] transition"
           >
             <GoogleIcon />
-            <span className="font-medium">Google</span>
+            <span className="font-medium">Register with Google</span>
           </button>
 
           <p className="text-xs text-center text-primary/70 mt-4 leading-relaxed">
@@ -73,10 +94,7 @@ const SignUp = () => {
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      fill="#EA4335"
-      d="M12 11v3.2h7.45c-.3 1.6-1.95 4.7-7.45 4.7-4.5 0-8.15-3.7-8.15-8.3S7.5 2.3 12 2.3c2.55 0 4.25 1.1 5.25 2.05l3.55-3.4C18.55-1.05 15.55-2 12-2 5.4-2 0 3.4 0 10.6S5.4 23.2 12 23.2c6.95 0 11.55-4.85 11.55-11.7 0-.8-.1-1.4-.2-2H12z"
-    />
+    <path fill="#EA4335" d="M12 11v3.2h7.45c-.3 1.6-1.95 4.7-7.45 4.7-4.5 0-8.15-3.7-8.15-8.3S7.5 2.3 12 2.3c2.55 0 4.25 1.1 5.25 2.05l3.55-3.4C18.55-1.05 15.55-2 12-2 5.4-2 0 3.4 0 10.6S5.4 23.2 12 23.2c6.95 0 11.55-4.85 11.55-11.7 0-.8-.1-1.4-.2-2H12z" />
   </svg>
 );
 
