@@ -304,9 +304,10 @@ export const SimulatorLKPD = () => {
 
       <button
         onClick={handleRecord}
-        className="w-full rounded-xl bg-lkpd text-white py-3 font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+        disabled={recording}
+        className="w-full rounded-xl bg-lkpd text-white py-3 font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60"
       >
-        <Database className="h-4 w-4" /> Catat Data
+        <Database className="h-4 w-4" /> {recording ? "Mencatat..." : "Catat Data"}
       </button>
 
       <div className="rounded-xl bg-card border border-border p-3 text-sm">
