@@ -1,22 +1,32 @@
-import { Link } from "react-router-dom";
-import { Info, Brain, BookOpen, FileText, Pencil, Waves } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Info, Brain, BookOpen, FileText, Pencil, Waves, ChevronLeft } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { stages } from "@/data/stages";
 
-const Home = () => {
+const Doppler = () => {
+  const navigate = useNavigate();
   return (
     <MobileShell>
       <div className="min-h-screen safe-px pt-12 pb-12">
-        {/* Top right info + user */}
-        <div className="flex justify-end items-center gap-2">
+        {/* Top bar: back + info + user */}
+        <div className="flex items-center justify-between gap-2">
           <button
-            aria-label="Info"
-            className="h-9 w-9 rounded-full border border-border flex items-center justify-center text-foreground/60"
+            aria-label="Kembali"
+            onClick={() => navigate("/home")}
+            className="h-9 w-9 rounded-full border border-border flex items-center justify-center text-foreground/70"
           >
-            <Info className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5" />
           </button>
-          <UserButton afterSignOutUrl="/login" appearance={{ elements: { avatarBox: "h-9 w-9" } }} />
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="Info"
+              className="h-9 w-9 rounded-full border border-border flex items-center justify-center text-foreground/60"
+            >
+              <Info className="h-4 w-4" />
+            </button>
+            <UserButton afterSignOutUrl="/login" appearance={{ elements: { avatarBox: "h-9 w-9" } }} />
+          </div>
         </div>
 
         {/* Brand mark */}
@@ -24,10 +34,10 @@ const Home = () => {
           <div className="h-20 w-20 rounded-3xl bg-primary flex items-center justify-center shadow-elevated">
             <Waves className="h-10 w-10 text-primary-foreground" strokeWidth={2.5} />
           </div>
-          <h1 className="mt-4 text-3xl font-bold text-foreground tracking-tight">Sound Waves</h1>
-          <p className="text-sm text-muted-foreground mt-1">Grade 11 Physics</p>
+          <h1 className="mt-4 text-3xl font-bold text-foreground tracking-tight">Efek Doppler</h1>
+          <p className="text-sm text-muted-foreground mt-1">Kelas 11 Fisika</p>
           <p className="text-sm text-muted-foreground text-center mt-1 px-4">
-            An inquiry-based deep learning journey through the physics of sound
+            Perjalanan inquiry deep learning tentang fenomena Efek Doppler
           </p>
         </div>
 
