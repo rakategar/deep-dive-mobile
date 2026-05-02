@@ -65,11 +65,15 @@ const Doppler = () => {
                   <s.Icon className="h-7 w-7 text-white" strokeWidth={2.2} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground font-mono">{String(s.id).padStart(2, "0")}</p>
-                  <p className="font-semibold text-foreground leading-tight">{s.title}</p>
+                  <p className="leading-tight">
+                    <span className="text-sm text-muted-foreground font-mono mr-1.5">
+                      {String(s.id).padStart(2, "0")}
+                    </span>
+                    <span className="font-bold italic text-foreground">{s.title}</span>
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1 leading-snug">{s.blurbId}</p>
-                  <span className="inline-flex items-center gap-1.5 mt-2 text-xs text-info font-medium">
-                    <span className="inline-block h-3 w-3 rounded-full border-2 border-info" />
+                  <span className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary italic font-medium bg-primary/10 px-2 py-0.5 rounded-md">
+                    <Target className="h-3 w-3" />
                     {s.thinking}
                   </span>
                 </div>
