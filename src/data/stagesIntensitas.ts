@@ -98,7 +98,7 @@ export const stagesIntensitas: Stage[] = [
     textColor: "text-stage-5",
     ctaLabel: "Lanjut ke Penarikan Kesimpulan",
     next: "/intensitas/stage/penarikan-kesimpulan",
-    materi: [],
+    materi: [{ title: "Menganalisis Data Intensitas Bunyi", key: "intensitas-analyze" }],
     lkpdTitle: "Data & Analisis Intensitas Bunyi",
     lkpdKey: "intensitas-data-analysis",
   },

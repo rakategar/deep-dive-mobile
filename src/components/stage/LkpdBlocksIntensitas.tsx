@@ -33,19 +33,18 @@ export const IntensitasObservationLKPD = () => (
     <p className="text-sm font-medium text-foreground">Fenomena intensitas bunyi yang diamati:</p>
     <div className="rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-1">
       <Volume2 className="h-6 w-6 text-foreground/70" />
-      <span className="text-sm font-semibold">Sound Horeg (Keras)</span>
-      <span className="text-xs text-muted-foreground">~110–120 dB</span>
+      <span className="text-sm font-medium italic">Sound Horeg</span>
+      <span className="text-xs text-muted-foreground">~120 - 135 dB</span>
     </div>
-    <textarea
-      placeholder="Tuliskan observasimu di sini... contoh: Saat aku berdiri 1 meter dari speaker, bunyi terasa sangat menyakitkan; saat aku menjauh 4 meter, intensitasnya turun drastis..."
-      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
-    />
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <b className="text-lkpd">💡 Pertanyaan Refleksi:</b>
-      <p className="mt-1">
-        Menurut kamu, apakah intensitas bunyi yang kamu dengar bergantung pada jarak dan daya sumber? Tuliskan
-        perkiraanmu!
+    <p className="text-sm font-medium text-foreground mt-3">Catat hasil observasimu tentang intensitas bunyi:</p>
+    <div className="rounded-xl border border-border bg-card p-3">
+      <p className="text-sm text-foreground/85">
+        Mengapa bunyi <i>sound horeg</i> dapat memecahkan kaca yang berada didekat <i>sound horeg</i>?
       </p>
+      <textarea
+        placeholder="Tuliskan pendapatmu...."
+        className="w-full mt-2 rounded-lg border border-border bg-card p-3 text-xs text-foreground/75 min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+      />
     </div>
   </div>
 );
