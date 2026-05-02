@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Database, Pause, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, Trash2, FileSpreadsheet } from "lucide-react";
+import { Database, Pause, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, Trash2 } from "lucide-react";
 import { DopplerWaveCanvas, type DopplerWaveCanvasHandle } from "./DopplerWaveCanvas";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
