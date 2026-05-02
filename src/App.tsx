@@ -76,7 +76,14 @@ const AnimatedRoutes = () => {
       <Route path="/intensitas/modul" element={<RequireAuth><Modul /></RequireAuth>} />
       <Route path="/certificate" element={<RequireAuth><Certificate /></RequireAuth>} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </PageTransition>
+  );
+};
+
+const AppRoutes = () => (
+  <BrowserRouter>
+    <AnimatedRoutes />
   </BrowserRouter>
 );
 
