@@ -43,7 +43,7 @@ export const stages: Stage[] = [
     slug: "perumusan-masalah",
     title: "Problem Formulation",
     titleId: "Perumusan Masalah",
-    blurbId: "Ubah observasimu menjadi pertanyaan penelitian ilmiah",
+    blurbId: "Merumuskan pertanyaan penelitian dari fenomena yang disajikan",
     thinking: "Analysis",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menganalisis fenomena yang diamati dengan memecahnya menjadi komponen-komponen, mengidentifikasi variabel beserta hubungannya, dan merumuskan pertanyaan yang dapat diselidiki.",
@@ -55,7 +55,6 @@ export const stages: Stage[] = [
     materi: [
       { title: "Variabel-variabel dalam Efek Doppler", key: "variables" },
       { title: "Apa itu Pertanyaan Penelitian yang Baik?", key: "good-question" },
-      { title: "Jenis-jenis Pertanyaan Penelitian", key: "question-types" },
     ],
     lkpdTitle: "Rumuskan Pertanyaan Penelitianmu",
     lkpdKey: "formulate-question",
