@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Info, Brain, BookOpen, FileText, Pencil, Waves, ChevronLeft } from "lucide-react";
+import { Info, Brain, BookOpen, FileText, Pencil, Waves, ChevronLeft, Target } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { stagesIntensitas } from "@/data/stagesIntensitas";
@@ -84,8 +84,8 @@ const Intensitas = () => {
                   <p className="text-xs text-muted-foreground font-mono">{String(s.id).padStart(2, "0")}</p>
                   <p className="font-semibold text-foreground leading-tight">{s.titleId}</p>
                   <p className="text-sm text-muted-foreground mt-1 leading-snug">{s.blurbId}</p>
-                  <span className="inline-flex items-center gap-1.5 mt-2 text-xs text-info font-medium">
-                    <span className="inline-block h-3 w-3 rounded-full border-2 border-info" />
+                  <span className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary italic font-medium bg-primary/10 px-2 py-0.5 rounded-md">
+                    <Target className="h-3 w-3" />
                     {s.thinking}
                   </span>
                 </div>
