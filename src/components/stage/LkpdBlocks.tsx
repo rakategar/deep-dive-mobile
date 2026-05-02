@@ -280,7 +280,49 @@ export const SimulatorLKPD = () => {
     timers[index] = window.setTimeout(() => updateFpOnServer(index, value), 700);
   };
 
-  const handleClear = () => setEntries([]);
+  const [clearing, setClearing] = useState(false);
+  const handleClear = async () => {
+    if (!isSignedIn) {
+      setEntries([]);
+      return;
+    }
+    if (!window.confirm("Hapus semua data Efek Doppler kamu dari spreadsheet? Tindakan ini tidak bisa dibatalkan.")) {
+      return;
+    }
+    setClearing(true);
+    try {
+      const token = await getToken();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const rowNumbers = entries.map((e) => e.rowNumber).filter((n): n is number => typeof n === "number");
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/delete-doppler-rows`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ rowNumbers }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal menghapus data");
+      setEntries([]);
+      toast({
+        title: "Data dihapus",
+        description: `${data.cleared ?? 0} baris dihapus dari spreadsheet.`,
+      });
+    } catch (err: any) {
+      console.error("delete doppler rows error", err);
+      toast({
+        title: "Gagal menghapus",
+        description: err?.message ?? "Coba lagi sebentar.",
+        variant: "destructive",
+      });
+    } finally {
+      setClearing(false);
+    }
+  };
   const handleReset = () => canvasRef.current?.reset();
 
   return (
@@ -385,10 +427,11 @@ export const SimulatorLKPD = () => {
           {entries.length > 0 && (
             <button
               onClick={handleClear}
-              className="text-xs text-rose-600 flex items-center gap-1 hover:underline"
-              title="Hanya menghapus tampilan lokal — data di spreadsheet tetap tersimpan."
+              disabled={clearing}
+              className="text-xs text-rose-600 flex items-center gap-1 hover:underline disabled:opacity-50"
+              title="Menghapus semua baris kamu di spreadsheet."
             >
-              <Trash2 className="h-3 w-3" /> Hapus Tampilan
+              <Trash2 className="h-3 w-3" /> {clearing ? "Menghapus..." : "Hapus"}
             </button>
           )}
         </div>
