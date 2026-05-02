@@ -19,8 +19,14 @@ export const DopplerIntro = () => (
         <p>• Perubahan ini hanya dirasakan <b>pengamat</b>; frekuensi sumber sesungguhnya tidak berubah!</p>
       </div>
     </div>
-    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-stage-2/90 to-stage-1/80 aspect-video flex items-center justify-center">
-      <p className="font-display text-3xl text-white italic">Doppler Effect</p>
+    <div className="rounded-2xl overflow-hidden bg-black relative w-full" style={{ paddingTop: "177.78%" }}>
+      <iframe
+        src="https://www.youtube.com/embed/3XbipIKGNv4"
+        title="Video Efek Doppler"
+        className="absolute inset-0 w-full h-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
     </div>
     <p className="text-xs text-muted-foreground italic">
       Efek Doppler ditemukan oleh fisikawan Austria <b>Christian Doppler</b> pada tahun 1842 dan kini digunakan di
