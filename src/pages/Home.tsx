@@ -34,16 +34,16 @@ const Home = () => {
               <h2 className="font-semibold text-base leading-tight">
                 Terintegrasi Keterampilan Berpikir Kritis
               </h2>
-              <p className="text-sm text-primary-foreground/80">Facione's Framework</p>
+              <p className="text-sm text-primary-foreground/80 italic font-bold">Facione's Framework</p>
             </div>
           </div>
           <p className="text-sm text-primary-foreground/90 mt-4 leading-relaxed">
             Setiap tahapan inquiry mengembangkan keterampilan berpikir kritis spesifik:{" "}
-            <span className="font-semibold">Interpretation</span>,{" "}
-            <span className="font-semibold">Analysis</span>,{" "}
-            <span className="font-semibold">Inference</span>,{" "}
-            <span className="font-semibold">Evaluation</span>, dan{" "}
-            <span className="font-semibold">Explanation</span>.
+            <span className="font-bold italic">Interpretation</span>,{" "}
+            <span className="font-bold italic">Analysis</span>,{" "}
+            <span className="font-bold italic">Inference</span>,{" "}
+            <span className="font-bold italic">Evaluation</span>, dan{" "}
+            <span className="font-bold italic">Explanation</span>.
           </p>
         </div>
 
