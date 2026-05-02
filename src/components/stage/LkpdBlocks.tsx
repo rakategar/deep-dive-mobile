@@ -1,18 +1,60 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Database, Pause, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, Trash2 } from "lucide-react";
+import {
+  Database,
+  Pause,
+  Play,
+  RotateCcw,
+  Siren,
+  MessageCircle,
+  Lightbulb,
+  Target,
+  Trash2,
+  Check,
+  X,
+} from "lucide-react";
 import { DopplerWaveCanvas, type DopplerWaveCanvasHandle } from "./DopplerWaveCanvas";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface DopplerEntry {
   no: number;
+  rowNumber?: number;
   mode: "approach" | "leave";
   fs: number;
   vs: number;
-  fp: string;
+  fp: string; // student-entered
+  saveStatus?: "idle" | "saving" | "saved" | "error";
+  checkStatus?: "correct" | "wrong" | null;
 }
+
+const SOUND_SPEED = 343;
+
+const computeExpectedFp = (mode: "approach" | "leave", fs: number, vs: number) => {
+  const v = SOUND_SPEED;
+  const safeVs = Math.min(Math.max(vs, 0), v - 1);
+  const denom = mode === "approach" ? v - safeVs : v + safeVs;
+  return (fs * v) / denom;
+};
+
+const fetchUserDopplerRows = async (token: string | null): Promise<DopplerEntry[]> => {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const res = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/list-doppler-data`,
+    { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+  );
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal memuat data");
+  return (data.rows ?? []).map((r: any) => ({
+    no: r.no,
+    rowNumber: r.rowNumber,
+    mode: r.mode,
+    fs: r.fs,
+    vs: r.vs,
+    fp: r.fp ?? "",
+    saveStatus: "idle",
+  }));
+};
 
 
 export const ObservationLKPD = () => (
