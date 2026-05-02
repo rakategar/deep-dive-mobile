@@ -35,36 +35,10 @@ const Doppler = () => {
             <Waves className="h-10 w-10 text-primary-foreground" strokeWidth={2.5} />
           </div>
           <h1 className="mt-4 text-3xl font-bold text-foreground tracking-tight">Efek Doppler</h1>
-          <p className="text-sm text-muted-foreground mt-1">Kelas 11 Fisika</p>
-          <p className="text-sm text-muted-foreground text-center mt-1 px-4">
-            Perjalanan inquiry deep learning tentang fenomena Efek Doppler
-          </p>
-        </div>
-
-        {/* Critical thinking card */}
-        <div className="mt-6 rounded-3xl bg-primary text-primary-foreground p-5 shadow-card">
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-primary-foreground/15 flex items-center justify-center shrink-0">
-              <Brain className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-base leading-tight">Critical Thinking Integration</h2>
-              <p className="text-sm text-primary-foreground/80">Facione's Framework</p>
-            </div>
-          </div>
-          <p className="text-sm text-primary-foreground/90 mt-4 leading-relaxed">
-            Each inquiry stage develops specific critical thinking skills:{" "}
-            <span className="font-semibold">Interpretation</span>,{" "}
-            <span className="font-semibold">Analysis</span>,{" "}
-            <span className="font-semibold">Inference</span>,{" "}
-            <span className="font-semibold">Evaluation</span>,{" "}
-            <span className="font-semibold">Explanation</span>, and{" "}
-            <span className="font-semibold">Self-Regulation</span>.
-          </p>
         </div>
 
         {/* Resources */}
-        <div className="mt-5 rounded-3xl bg-card p-5 shadow-card">
+        <div className="mt-6 rounded-3xl bg-card p-5 shadow-card">
           <h3 className="font-semibold text-foreground">Buku Ajar & Modul Latihan Soal</h3>
           <div className="grid grid-cols-3 gap-3 mt-4">
             <ResourceTile Icon={BookOpen} label="Buku Ajar" tint="bg-surface-soft-blue" iconColor="text-info" />
@@ -74,7 +48,9 @@ const Doppler = () => {
         </div>
 
         {/* Journey */}
-        <h3 className="font-semibold text-foreground mt-7 mb-3">6-Stage Inquiry Learning Journey</h3>
+        <h3 className="font-semibold text-foreground mt-7 mb-3">
+          6 Tahapan Pembelajaran <i>Inquiry</i>
+        </h3>
         <div className="space-y-3">
           {stages.map((s) => (
             <Link
