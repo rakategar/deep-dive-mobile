@@ -90,9 +90,9 @@ export const stagesIntensitas: Stage[] = [
     title: "Hypothesis Testing",
     titleId: "Pengujian Hipotesis",
     blurbId: "Analisis data dan bandingkan hasilnya dengan prediksimu",
-    thinking: "Analisis + Evaluasi",
+    thinking: "Evaluasi + Inferensi",
     thinkingDetailId:
-      "Pada tahap ini, kamu akan mengevaluasi data intensitas dan taraf intensitas yang dikumpulkan, lalu menarik inferensi apakah bukti mendukung atau menyangkal prediksimu tentang hukum kuadrat terbalik.",
+      "Pada tahap ini, kamu akan **mengevaluasi** kekuatan dan kredibilitas datamu dengan membandingkannya terhadap hipotesis, lalu menarik **inferensi** apakah bukti mendukung atau menyangkal prediksimu.",
     Icon: FlaskConical,
     colorVar: "bg-stage-5",
     textColor: "text-stage-5",
