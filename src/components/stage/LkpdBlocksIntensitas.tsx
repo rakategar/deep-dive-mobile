@@ -294,6 +294,7 @@ export const IntensitasSimulatorLKPD = () => {
   const [r, setR] = useState(90); // meter
   const [entries, setEntries] = useState<IntensitasEntry[]>([]);
   const [recording, setRecording] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const debounceTimers = useRef<Record<number, number>>({});
   const navigate = useNavigate();
   const { isSignedIn, getToken } = useAuth();
@@ -326,6 +327,49 @@ export const IntensitasSimulatorLKPD = () => {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn]);
+
+  const handleClear = async () => {
+    if (!isSignedIn) {
+      setEntries([]);
+      return;
+    }
+    if (!window.confirm("Hapus semua data Intensitas Bunyi kamu dari spreadsheet? Tindakan ini tidak bisa dibatalkan.")) {
+      return;
+    }
+    setClearing(true);
+    try {
+      const token = await getToken();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const rowNumbers = entries.map((e) => e.rowNumber).filter((n): n is number => typeof n === "number");
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/delete-intensity-rows`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ rowNumbers }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal menghapus data");
+      setEntries([]);
+      toast({
+        title: "Data dihapus",
+        description: `${data.cleared ?? 0} baris dihapus dari spreadsheet.`,
+      });
+    } catch (err: any) {
+      console.error("delete intensity rows error", err);
+      toast({
+        title: "Gagal menghapus",
+        description: err?.message ?? "Coba lagi sebentar.",
+        variant: "destructive",
+      });
+    } finally {
+      setClearing(false);
+    }
+  };
 
 
   const handleRecord = async () => {
@@ -515,11 +559,12 @@ export const IntensitasSimulatorLKPD = () => {
           <p className="font-semibold">Data Terkumpul</p>
           {entries.length > 0 && (
             <button
-              onClick={() => setEntries([])}
-              className="text-xs text-rose-600 flex items-center gap-1 hover:underline"
-              title="Hanya menghapus tampilan lokal — data di spreadsheet tetap tersimpan."
+              onClick={handleClear}
+              disabled={clearing}
+              className="text-xs text-rose-600 flex items-center gap-1 hover:underline disabled:opacity-50"
+              title="Menghapus semua baris kamu di spreadsheet."
             >
-              <Trash2 className="h-3 w-3" /> Hapus
+              <Trash2 className="h-3 w-3" /> {clearing ? "Menghapus..." : "Hapus"}
             </button>
           )}
         </div>
