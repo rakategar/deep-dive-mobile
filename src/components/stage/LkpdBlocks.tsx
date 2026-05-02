@@ -320,6 +320,19 @@ export const SimulatorLKPD = () => {
           </div>
         )}
       </div>
+
+      <div className="rounded-xl border border-lkpd/30 bg-surface-soft-purple p-3">
+        <p className="text-sm font-semibold text-lkpd flex items-center gap-2">
+          📊 Pertanyaan Analisis:
+        </p>
+        <p className="text-xs text-foreground/80 mt-1">
+          Bagaimana pola muka gelombang berbeda antara mendekati dan menjauh?
+        </p>
+        <textarea
+          placeholder="Ketika sumber mendekati pengamat, pola muka gelombang terlihat... sedangkan saat menjauh..."
+          className="w-full mt-2 rounded-lg border border-lkpd/30 bg-card p-2.5 text-xs min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
+      </div>
     </div>
   );
 };
