@@ -44,7 +44,6 @@ export const stagesIntensitas: Stage[] = [
     materi: [
       { title: "Variabel Intensitas Bunyi", key: "intensitas-variables" },
       { title: "Apa itu Pertanyaan Penelitian yang Baik?", key: "intensitas-good-question" },
-      { title: "Jenis-jenis Pertanyaan Penelitian", key: "intensitas-question-types" },
     ],
     lkpdTitle: "Rumuskan Pertanyaan Penelitianmu",
     lkpdKey: "intensitas-formulate-question",
@@ -81,7 +80,7 @@ export const stagesIntensitas: Stage[] = [
     textColor: "text-stage-4",
     ctaLabel: "Lanjut ke Pengujian Hipotesis",
     next: "/intensitas/stage/pengujian-hipotesis",
-    materi: [],
+    materi: [{ title: "Variabel Intensitas Bunyi", key: "intensitas-variables" }],
     lkpdTitle: "Simulator Intensitas Bunyi",
     lkpdKey: "intensitas-simulator",
   },

@@ -79,20 +79,6 @@ export const ObservationLKPD = () => (
 
 export const FormulateQuestionLKPD = () => (
   <div className="space-y-3">
-    <div className="rounded-xl bg-card border border-border p-3">
-      <p className="text-sm font-semibold flex items-center gap-2">
-        <MessageCircle className="h-4 w-4 text-lkpd" /> Pemandu Pertanyaan:
-      </p>
-      <div className="flex flex-wrap gap-2 mt-2">
-        {["Faktor apa yang mempengaruhi...", "Mengapa...", "Apa hubungan antara...", "Bagaimana... mempengaruhi..."].map(
-          (c) => (
-            <span key={c} className="text-xs px-3 py-1 rounded-full bg-surface-soft-purple text-lkpd">
-              {c}
-            </span>
-          )
-        )}
-      </div>
-    </div>
     <p className="text-sm font-medium text-foreground">Tuliskan pertanyaan penelitianmu:</p>
     <textarea
       placeholder="contoh: Bagaimana pengaruh kecepatan gerak sumber bunyi terhadap frekuensi yang terdengar oleh pengamat dalam efek Doppler?"
@@ -738,12 +724,6 @@ export const ConclusionLKPD = () => (
         placeholder="Berdasarkan penyelidikanku, aku menemukan bahwa Efek Doppler menyebabkan... Data menunjukkan bahwa saat kecepatan sumber meningkat... Rumus Efek Doppler terbukti karena... Hipotesisku tentang hubungan vₛ dan f'..."
         className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-28 outline-none"
       />
-    </div>
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs">
-      <p className="font-semibold text-lkpd">Sertakan dalam kesimpulanmu:</p>
-      <p>• Penjelasan mekanisme Efek Doppler</p>
-      <p>• Penjelasan hasil hipotesis dan percobaanmu</p>
-      <p>• Perbedaan kondisi mendekati vs menjauh berdasarkan data</p>
     </div>
     <div className="rounded-xl bg-card border border-border p-3">
       <p className="text-sm font-semibold flex items-center gap-2">

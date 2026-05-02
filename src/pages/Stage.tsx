@@ -7,6 +7,15 @@ import { getStageBySlug, stages } from "@/data/stages";
 import { materiContent, OrientationReflection, AnalyticalReflection } from "@/components/stage/MateriBlocks";
 import { lkpdContent } from "@/components/stage/LkpdBlocks";
 
+const renderBold = (text: string) =>
+  text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <b key={i}>{part.slice(2, -2)}</b>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+
 const Stage = () => {
   const { slug } = useParams();
   const stage = getStageBySlug(slug);
@@ -38,7 +47,7 @@ const Stage = () => {
         {/* Critical thinking focus */}
         <div className="mt-4 rounded-2xl bg-muted/60 p-4">
           <p className="font-semibold text-foreground text-sm">🎯 Fokus Berpikir Kritis: {stage.thinking}</p>
-          <p className="text-xs text-foreground/75 mt-1.5 leading-relaxed">{stage.thinkingDetailId}</p>
+          <p className="text-xs text-foreground/75 mt-1.5 leading-relaxed">{renderBold(stage.thinkingDetailId)}</p>
         </div>
 
         {/* Reflection inserts (only for stage 1 & 2 per Figma) */}
