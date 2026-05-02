@@ -473,28 +473,193 @@ export const SimulatorLKPD = () => {
 };
 
 export const DataTableLKPD = () => {
+  const { isSignedIn, getToken } = useAuth();
+  const [entries, setEntries] = useState<DopplerEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!isSignedIn) return;
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const rows = await fetchUserDopplerRows(token);
+      setEntries(rows);
+      setChecked(false);
+    } catch (err) {
+      console.error("load doppler rows error", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isSignedIn, getToken]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const filled = entries.filter((e) => String(e.fp).trim() !== "");
+  const total = entries.length;
+  const filledCount = filled.length;
+
+  const handleCheck = () => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        const userVal = parseFloat(String(e.fp).replace(",", "."));
+        if (!isFinite(userVal)) return { ...e, checkStatus: null };
+        const expected = computeExpectedFp(e.mode, e.fs, e.vs);
+        // 1% tolerance, min 0.5 Hz
+        const tol = Math.max(0.5, expected * 0.01);
+        const ok = Math.abs(userVal - expected) <= tol;
+        return { ...e, checkStatus: ok ? "correct" : "wrong" };
+      }),
+    );
+    setChecked(true);
+  };
+
+  const correctCount = entries.filter((e) => e.checkStatus === "correct").length;
+
   return (
     <div className="space-y-3">
       <div className="rounded-xl border border-emerald-300 bg-emerald-50/60 p-3">
-        <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
-          <Database className="h-4 w-4" /> Data dari Pengumpulan Data
-        </p>
-        <p className="text-xs text-emerald-900 mt-1">
-          Cek kolom <b>f' hitung</b>, apakah nilainya sesuai rumus efek Doppler?
-        </p>
-        <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 flex flex-col items-center gap-2 text-center">
-          <Database className="h-8 w-8 text-muted-foreground/60" />
-          <p className="text-xs text-muted-foreground">Belum ada data.</p>
-          <p className="text-xs text-muted-foreground">
-            Kembali ke <b>Pengumpulan Data</b>, catat beberapa baris dan isi kolom f' hitung terlebih dahulu.
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
+            <Database className="h-4 w-4" /> Data dari Pengumpulan Data
+            {total > 0 && (
+              <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                {total} baris
+              </span>
+            )}
           </p>
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="text-[11px] text-emerald-700 hover:underline disabled:opacity-50"
+          >
+            {loading ? "Memuat..." : "Muat ulang"}
+          </button>
         </div>
+        <p className="text-xs text-emerald-900 mt-1">
+          Cek kolom <b>f' hitung</b> — apakah nilaimu sesuai rumus efek Doppler?
+        </p>
+
+        {loading && entries.length === 0 ? (
+          <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 text-center">
+            <p className="text-xs text-muted-foreground">Memuat data dari spreadsheet...</p>
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 flex flex-col items-center gap-2 text-center">
+            <Database className="h-8 w-8 text-muted-foreground/60" />
+            <p className="text-xs text-muted-foreground">Belum ada data.</p>
+            <p className="text-xs text-muted-foreground">
+              Kembali ke <b>Pengumpulan Data</b>, catat beberapa baris dan isi kolom f' hitung terlebih dahulu.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-3 overflow-x-auto rounded-lg border border-emerald-200 bg-card">
+            <table className="w-full text-xs">
+              <thead className="bg-muted">
+                <tr className="text-left">
+                  <th className="p-2 font-semibold">#</th>
+                  <th className="p-2 font-semibold">f₀ (Hz)</th>
+                  <th className="p-2 font-semibold">vₛ (m/s)</th>
+                  <th className="p-2 font-semibold">Arah</th>
+                  <th className="p-2 font-semibold">f' hitung (Hz)</th>
+                  <th className="p-2 font-semibold w-8 text-center">✓</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e, i) => {
+                  const expected = computeExpectedFp(e.mode, e.fs, e.vs);
+                  const userVal = parseFloat(String(e.fp).replace(",", "."));
+                  const isCorrect = e.checkStatus === "correct";
+                  const isWrong = e.checkStatus === "wrong";
+                  return (
+                    <tr
+                      key={`${e.no}-${i}`}
+                      className={`border-t border-border ${
+                        checked
+                          ? isCorrect
+                            ? "bg-emerald-50/70"
+                            : isWrong
+                            ? "bg-rose-50/70"
+                            : ""
+                          : ""
+                      }`}
+                    >
+                      <td className="p-2">{e.no}</td>
+                      <td className="p-2">{e.fs}</td>
+                      <td className="p-2">{e.vs}</td>
+                      <td className="p-2">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            e.mode === "approach"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700"
+                          }`}
+                        >
+                          {e.mode === "approach" ? "Mendekati" : "Menjauh"}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        {checked && isWrong && isFinite(userVal) ? (
+                          <div className="space-y-0.5">
+                            <p className="text-rose-700 line-through">{e.fp} Hz</p>
+                            <p className="text-emerald-700 font-semibold">
+                              ✓ {expected.toFixed(1)} Hz
+                            </p>
+                          </div>
+                        ) : checked && isCorrect ? (
+                          <p className="text-emerald-700 font-semibold">{e.fp} Hz</p>
+                        ) : (
+                          <p>{e.fp || <span className="text-muted-foreground">—</span>}</p>
+                        )}
+                      </td>
+                      <td className="p-2 text-center">
+                        {checked && isCorrect && <Check className="h-4 w-4 text-emerald-600 inline" />}
+                        {checked && isWrong && <X className="h-4 w-4 text-rose-600 inline" />}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <button
-          disabled
-          className="w-full mt-3 rounded-lg bg-muted text-muted-foreground py-2 text-sm font-medium"
+          onClick={handleCheck}
+          disabled={filledCount === 0}
+          className={`w-full mt-3 rounded-lg py-2.5 text-sm font-semibold transition ${
+            filledCount === 0
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : "bg-lkpd text-white hover:opacity-90"
+          }`}
         >
-          Cek Jawaban (0/0 f' terisi)
+          Cek Jawaban ({filledCount}/{total} f' terisi)
         </button>
+
+        {checked && (
+          <div
+            className={`mt-3 rounded-lg p-3 text-xs text-center font-medium ${
+              correctCount === total && total > 0
+                ? "bg-emerald-100 text-emerald-800"
+                : correctCount === 0
+                ? "bg-rose-100 text-rose-800"
+                : "bg-amber-100 text-amber-800"
+            }`}
+          >
+            {correctCount === total && total > 0 ? "✅" : correctCount === 0 ? "❌" : "⚠️"}{" "}
+            <b>
+              {correctCount} / {total}
+            </b>{" "}
+            jawaban benar.
+            {correctCount < total && (
+              <p className="mt-1 font-normal">
+                Nilai hijau di bawah f' kamu adalah jawaban yang benar. Coba periksa rumus Doppler-mu!
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-border bg-card p-3">
