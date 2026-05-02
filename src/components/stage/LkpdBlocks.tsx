@@ -1,18 +1,60 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Database, Pause, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, Trash2 } from "lucide-react";
+import {
+  Database,
+  Pause,
+  Play,
+  RotateCcw,
+  Siren,
+  MessageCircle,
+  Lightbulb,
+  Target,
+  Trash2,
+  Check,
+  X,
+} from "lucide-react";
 import { DopplerWaveCanvas, type DopplerWaveCanvasHandle } from "./DopplerWaveCanvas";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface DopplerEntry {
   no: number;
+  rowNumber?: number;
   mode: "approach" | "leave";
   fs: number;
   vs: number;
-  fp: string;
+  fp: string; // student-entered
+  saveStatus?: "idle" | "saving" | "saved" | "error";
+  checkStatus?: "correct" | "wrong" | null;
 }
+
+const SOUND_SPEED = 343;
+
+const computeExpectedFp = (mode: "approach" | "leave", fs: number, vs: number) => {
+  const v = SOUND_SPEED;
+  const safeVs = Math.min(Math.max(vs, 0), v - 1);
+  const denom = mode === "approach" ? v - safeVs : v + safeVs;
+  return (fs * v) / denom;
+};
+
+const fetchUserDopplerRows = async (token: string | null): Promise<DopplerEntry[]> => {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const res = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/list-doppler-data`,
+    { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+  );
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal memuat data");
+  return (data.rows ?? []).map((r: any) => ({
+    no: r.no,
+    rowNumber: r.rowNumber,
+    mode: r.mode,
+    fs: r.fs,
+    vs: r.vs,
+    fp: r.fp ?? "",
+    saveStatus: "idle",
+  }));
+};
 
 
 export const ObservationLKPD = () => (
@@ -104,17 +146,37 @@ export const SimulatorLKPD = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [entries, setEntries] = useState<DopplerEntry[]>([]);
   const [recording, setRecording] = useState(false);
+  const [loadingEntries, setLoadingEntries] = useState(false);
   const canvasRef = useRef<DopplerWaveCanvasHandle>(null);
+  const debounceTimers = useRef<Record<number, number>>({});
   const navigate = useNavigate();
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
 
-  const v = 343;
   const safeVs = Math.min(vs, 300);
-  const denom = direction === "approach" ? v - safeVs : v + safeVs;
-  const fp = ((fs * v) / denom).toFixed(1);
-
   const fsPercent = ((fs - 100) / 900) * 100;
+
+  // Load existing rows from spreadsheet on mount / when user becomes signed in
+  useEffect(() => {
+    if (!isSignedIn) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingEntries(true);
+      try {
+        const token = await getToken();
+        const rows = await fetchUserDopplerRows(token);
+        if (!cancelled) setEntries(rows);
+      } catch (err) {
+        console.error("load doppler rows error", err);
+      } finally {
+        if (!cancelled) setLoadingEntries(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      Object.values(debounceTimers.current).forEach((t) => window.clearTimeout(t));
+    };
+  }, [isSignedIn, getToken]);
 
   const handleRecord = async () => {
     if (!isSignedIn || !user) {
@@ -142,18 +204,28 @@ export const SimulatorLKPD = () => {
             mode: direction === "approach" ? "Mendekati" : "Menjauh",
             fs,
             vs: safeVs,
-            fp: Number(fp),
           }),
         },
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Gagal mencatat data");
+      if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal mencatat data");
 
       setEntries((prev) => [
         ...prev,
-        { no: data.no ?? prev.length + 1, mode: direction, fs, vs: safeVs, fp },
+        {
+          no: data.no ?? prev.length + 1,
+          rowNumber: data.rowNumber,
+          mode: direction,
+          fs,
+          vs: safeVs,
+          fp: "",
+          saveStatus: "idle",
+        },
       ]);
-      toast({ title: "Data berhasil dicatat", description: `f' = ${fp} Hz pada vₛ = ${safeVs} m/s` });
+      toast({
+        title: "Data berhasil dicatat",
+        description: `Hitung sendiri f' lalu isi di kolom f'.`,
+      });
     } catch (err: any) {
       console.error("catat-data error", err);
       toast({
@@ -166,6 +238,47 @@ export const SimulatorLKPD = () => {
     }
   };
 
+  const updateFpOnServer = async (index: number, value: string) => {
+    const entry = entries[index];
+    if (!entry?.rowNumber) return;
+    setEntries((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, saveStatus: "saving" } : e)),
+    );
+    try {
+      const token = await getToken();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/update-doppler-fp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ rowNumber: entry.rowNumber, fp: value }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal menyimpan");
+      setEntries((prev) =>
+        prev.map((e, i) => (i === index ? { ...e, saveStatus: "saved" } : e)),
+      );
+    } catch (err) {
+      console.error("doppler fp update error", err);
+      setEntries((prev) =>
+        prev.map((e, i) => (i === index ? { ...e, saveStatus: "error" } : e)),
+      );
+    }
+  };
+
+  const handleFpChange = (index: number, value: string) => {
+    setEntries((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, fp: value, saveStatus: "idle" } : e)),
+    );
+    const timers = debounceTimers.current;
+    if (timers[index]) window.clearTimeout(timers[index]);
+    timers[index] = window.setTimeout(() => updateFpOnServer(index, value), 700);
+  };
 
   const handleClear = () => setEntries([]);
   const handleReset = () => canvasRef.current?.reset();
@@ -258,7 +371,6 @@ export const SimulatorLKPD = () => {
         </div>
       </div>
 
-
       <button
         onClick={handleRecord}
         disabled={recording}
@@ -274,17 +386,20 @@ export const SimulatorLKPD = () => {
             <button
               onClick={handleClear}
               className="text-xs text-rose-600 flex items-center gap-1 hover:underline"
+              title="Hanya menghapus tampilan lokal — data di spreadsheet tetap tersimpan."
             >
-              <Trash2 className="h-3 w-3" /> Hapus Data
+              <Trash2 className="h-3 w-3" /> Hapus Tampilan
             </button>
           )}
         </div>
-        {entries.length === 0 ? (
+        {loadingEntries && entries.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center mt-3">Memuat data...</p>
+        ) : entries.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center mt-3">
             Belum ada data. Atur parameter lalu tekan "Catat Data".
           </p>
         ) : (
-          <div className="mt-2 overflow-hidden rounded-lg border border-border">
+          <div className="mt-2 overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-xs">
               <thead className="bg-muted">
                 <tr className="text-left">
@@ -292,12 +407,12 @@ export const SimulatorLKPD = () => {
                   <th className="p-2 font-semibold">Mode</th>
                   <th className="p-2 font-semibold">f₀</th>
                   <th className="p-2 font-semibold">vₛ</th>
-                  <th className="p-2 font-semibold">f'</th>
+                  <th className="p-2 font-semibold bg-amber-50">f' (Hz) ✏️</th>
                 </tr>
               </thead>
               <tbody>
-                {entries.map((e) => (
-                  <tr key={e.no} className="border-t border-border animate-fade-in">
+                {entries.map((e, i) => (
+                  <tr key={`${e.no}-${i}`} className="border-t border-border animate-fade-in">
                     <td className="p-2">{e.no}</td>
                     <td className="p-2">
                       <span
@@ -312,13 +427,33 @@ export const SimulatorLKPD = () => {
                     </td>
                     <td className="p-2">{e.fs}</td>
                     <td className="p-2 font-bold">{e.vs}</td>
-                    <td className="p-2 font-bold text-lkpd">{e.fp}</td>
+                    <td className="p-2 bg-amber-50/40">
+                      <input
+                        value={e.fp}
+                        onChange={(ev) => handleFpChange(i, ev.target.value)}
+                        placeholder="hitung..."
+                        className="w-24 rounded-md border border-amber-300 bg-card px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                      {e.saveStatus === "saving" && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Menyimpan...</p>
+                      )}
+                      {e.saveStatus === "saved" && (
+                        <p className="text-[10px] text-emerald-600 mt-0.5">Tersimpan</p>
+                      )}
+                      {e.saveStatus === "error" && (
+                        <p className="text-[10px] text-rose-600 mt-0.5">Gagal menyimpan</p>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
+        <p className="text-[11px] text-foreground/70 mt-2 leading-snug">
+          💡 Hitung sendiri nilai <b>f'</b> menggunakan rumus efek Doppler. Nilai akan tersimpan otomatis ke
+          spreadsheet dan muncul di tahap Pengujian Hipotesis.
+        </p>
       </div>
 
       <div className="rounded-xl border border-lkpd/30 bg-surface-soft-purple p-3">
@@ -338,28 +473,193 @@ export const SimulatorLKPD = () => {
 };
 
 export const DataTableLKPD = () => {
+  const { isSignedIn, getToken } = useAuth();
+  const [entries, setEntries] = useState<DopplerEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!isSignedIn) return;
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const rows = await fetchUserDopplerRows(token);
+      setEntries(rows);
+      setChecked(false);
+    } catch (err) {
+      console.error("load doppler rows error", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isSignedIn, getToken]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const filled = entries.filter((e) => String(e.fp).trim() !== "");
+  const total = entries.length;
+  const filledCount = filled.length;
+
+  const handleCheck = () => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        const userVal = parseFloat(String(e.fp).replace(",", "."));
+        if (!isFinite(userVal)) return { ...e, checkStatus: null };
+        const expected = computeExpectedFp(e.mode, e.fs, e.vs);
+        // 1% tolerance, min 0.5 Hz
+        const tol = Math.max(0.5, expected * 0.01);
+        const ok = Math.abs(userVal - expected) <= tol;
+        return { ...e, checkStatus: ok ? "correct" : "wrong" };
+      }),
+    );
+    setChecked(true);
+  };
+
+  const correctCount = entries.filter((e) => e.checkStatus === "correct").length;
+
   return (
     <div className="space-y-3">
       <div className="rounded-xl border border-emerald-300 bg-emerald-50/60 p-3">
-        <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
-          <Database className="h-4 w-4" /> Data dari Pengumpulan Data
-        </p>
-        <p className="text-xs text-emerald-900 mt-1">
-          Cek kolom <b>f' hitung</b>, apakah nilainya sesuai rumus efek Doppler?
-        </p>
-        <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 flex flex-col items-center gap-2 text-center">
-          <Database className="h-8 w-8 text-muted-foreground/60" />
-          <p className="text-xs text-muted-foreground">Belum ada data.</p>
-          <p className="text-xs text-muted-foreground">
-            Kembali ke <b>Pengumpulan Data</b>, catat beberapa baris dan isi kolom f' hitung terlebih dahulu.
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
+            <Database className="h-4 w-4" /> Data dari Pengumpulan Data
+            {total > 0 && (
+              <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                {total} baris
+              </span>
+            )}
           </p>
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="text-[11px] text-emerald-700 hover:underline disabled:opacity-50"
+          >
+            {loading ? "Memuat..." : "Muat ulang"}
+          </button>
         </div>
+        <p className="text-xs text-emerald-900 mt-1">
+          Cek kolom <b>f' hitung</b> — apakah nilaimu sesuai rumus efek Doppler?
+        </p>
+
+        {loading && entries.length === 0 ? (
+          <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 text-center">
+            <p className="text-xs text-muted-foreground">Memuat data dari spreadsheet...</p>
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 flex flex-col items-center gap-2 text-center">
+            <Database className="h-8 w-8 text-muted-foreground/60" />
+            <p className="text-xs text-muted-foreground">Belum ada data.</p>
+            <p className="text-xs text-muted-foreground">
+              Kembali ke <b>Pengumpulan Data</b>, catat beberapa baris dan isi kolom f' hitung terlebih dahulu.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-3 overflow-x-auto rounded-lg border border-emerald-200 bg-card">
+            <table className="w-full text-xs">
+              <thead className="bg-muted">
+                <tr className="text-left">
+                  <th className="p-2 font-semibold">#</th>
+                  <th className="p-2 font-semibold">f₀ (Hz)</th>
+                  <th className="p-2 font-semibold">vₛ (m/s)</th>
+                  <th className="p-2 font-semibold">Arah</th>
+                  <th className="p-2 font-semibold">f' hitung (Hz)</th>
+                  <th className="p-2 font-semibold w-8 text-center">✓</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e, i) => {
+                  const expected = computeExpectedFp(e.mode, e.fs, e.vs);
+                  const userVal = parseFloat(String(e.fp).replace(",", "."));
+                  const isCorrect = e.checkStatus === "correct";
+                  const isWrong = e.checkStatus === "wrong";
+                  return (
+                    <tr
+                      key={`${e.no}-${i}`}
+                      className={`border-t border-border ${
+                        checked
+                          ? isCorrect
+                            ? "bg-emerald-50/70"
+                            : isWrong
+                            ? "bg-rose-50/70"
+                            : ""
+                          : ""
+                      }`}
+                    >
+                      <td className="p-2">{e.no}</td>
+                      <td className="p-2">{e.fs}</td>
+                      <td className="p-2">{e.vs}</td>
+                      <td className="p-2">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            e.mode === "approach"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700"
+                          }`}
+                        >
+                          {e.mode === "approach" ? "Mendekati" : "Menjauh"}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        {checked && isWrong && isFinite(userVal) ? (
+                          <div className="space-y-0.5">
+                            <p className="text-rose-700 line-through">{e.fp} Hz</p>
+                            <p className="text-emerald-700 font-semibold">
+                              ✓ {expected.toFixed(1)} Hz
+                            </p>
+                          </div>
+                        ) : checked && isCorrect ? (
+                          <p className="text-emerald-700 font-semibold">{e.fp} Hz</p>
+                        ) : (
+                          <p>{e.fp || <span className="text-muted-foreground">—</span>}</p>
+                        )}
+                      </td>
+                      <td className="p-2 text-center">
+                        {checked && isCorrect && <Check className="h-4 w-4 text-emerald-600 inline" />}
+                        {checked && isWrong && <X className="h-4 w-4 text-rose-600 inline" />}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <button
-          disabled
-          className="w-full mt-3 rounded-lg bg-muted text-muted-foreground py-2 text-sm font-medium"
+          onClick={handleCheck}
+          disabled={filledCount === 0}
+          className={`w-full mt-3 rounded-lg py-2.5 text-sm font-semibold transition ${
+            filledCount === 0
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : "bg-lkpd text-white hover:opacity-90"
+          }`}
         >
-          Cek Jawaban (0/0 f' terisi)
+          Cek Jawaban ({filledCount}/{total} f' terisi)
         </button>
+
+        {checked && (
+          <div
+            className={`mt-3 rounded-lg p-3 text-xs text-center font-medium ${
+              correctCount === total && total > 0
+                ? "bg-emerald-100 text-emerald-800"
+                : correctCount === 0
+                ? "bg-rose-100 text-rose-800"
+                : "bg-amber-100 text-amber-800"
+            }`}
+          >
+            {correctCount === total && total > 0 ? "✅" : correctCount === 0 ? "❌" : "⚠️"}{" "}
+            <b>
+              {correctCount} / {total}
+            </b>{" "}
+            jawaban benar.
+            {correctCount < total && (
+              <p className="mt-1 font-normal">
+                Nilai hijau di bawah f' kamu adalah jawaban yang benar. Coba periksa rumus Doppler-mu!
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-border bg-card p-3">

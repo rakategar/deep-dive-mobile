@@ -1,5 +1,6 @@
 import { Clipboard, Scale, Search, Microscope, Siren, Radar, Star, Car, Stethoscope, Ship, Truck } from "lucide-react";
 import scientist from "@/assets/avatars/scientist.png";
+import { ParenFraction } from "./Fraction";
 
 /* ----------------------------- Materi blocks ----------------------------- */
 
@@ -100,9 +101,15 @@ export const QuestionTypes = () => (
 export const DopplerFormula = () => (
   <div className="rounded-2xl bg-stage-2 p-4 text-white">
     <p className="text-[10px] tracking-widest font-semibold opacity-80">RUMUS EFEK DOPPLER</p>
-    <p className="font-display italic text-2xl text-center my-3">
-      fₚ = ( v ± vₚ ⁄ v ± vₛ ) · fₛ
-    </p>
+    <div className="flex items-center justify-center my-4 font-display italic text-2xl">
+      <span>f<sub className="italic">p</sub></span>
+      <span className="mx-2">=</span>
+      <ParenFraction
+        num={<span>v ± v<sub className="italic">p</sub></span>}
+        den={<span>v ± v<sub className="italic">s</sub></span>}
+      />
+      <span className="ml-2">f<sub className="italic">s</sub></span>
+    </div>
     <div className="grid grid-cols-2 gap-2 text-xs">
       <div className="rounded-lg bg-white/10 p-2">
         <p className="bg-white/15 rounded px-2 py-0.5 inline-block mb-1">Aturan tanda <i>vₚ</i></p>

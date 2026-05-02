@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.update-intensity-ti]
 verify_jwt = false
+
+[functions.append-doppler-data]
+verify_jwt = false
+
+[functions.update-doppler-fp]
+verify_jwt = false
+
+[functions.list-doppler-data]
+verify_jwt = false
