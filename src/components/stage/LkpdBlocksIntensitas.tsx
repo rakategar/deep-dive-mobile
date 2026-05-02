@@ -559,11 +559,12 @@ export const IntensitasSimulatorLKPD = () => {
           <p className="font-semibold">Data Terkumpul</p>
           {entries.length > 0 && (
             <button
-              onClick={() => setEntries([])}
-              className="text-xs text-rose-600 flex items-center gap-1 hover:underline"
-              title="Hanya menghapus tampilan lokal — data di spreadsheet tetap tersimpan."
+              onClick={handleClear}
+              disabled={clearing}
+              className="text-xs text-rose-600 flex items-center gap-1 hover:underline disabled:opacity-50"
+              title="Menghapus semua baris kamu di spreadsheet."
             >
-              <Trash2 className="h-3 w-3" /> Hapus
+              <Trash2 className="h-3 w-3" /> {clearing ? "Menghapus..." : "Hapus"}
             </button>
           )}
         </div>
