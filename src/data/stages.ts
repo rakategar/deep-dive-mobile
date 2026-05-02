@@ -25,7 +25,7 @@ export const stages: Stage[] = [
     slug: "orientasi",
     title: "Orientation",
     titleId: "Orientasi",
-    blurbId: "Jelajahi fenomena gelombang bunyi nyata dan observasi awal",
+    blurbId: "Observasi fenomena gelombang bunyi dalam kehidupan sehari-hari",
     thinking: "Interpretation",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menginterpretasikan fenomena bunyi nyata dengan memahami informasi visual dan kontekstual, mengidentifikasi konsep kunci, serta mengungkapkan pemahamanmu terhadap apa yang diamati.",
@@ -43,7 +43,7 @@ export const stages: Stage[] = [
     slug: "perumusan-masalah",
     title: "Problem Formulation",
     titleId: "Perumusan Masalah",
-    blurbId: "Ubah observasimu menjadi pertanyaan penelitian ilmiah",
+    blurbId: "Merumuskan pertanyaan penelitian dari fenomena yang disajikan",
     thinking: "Analysis",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menganalisis fenomena yang diamati dengan memecahnya menjadi komponen-komponen, mengidentifikasi variabel beserta hubungannya, dan merumuskan pertanyaan yang dapat diselidiki.",
@@ -55,7 +55,6 @@ export const stages: Stage[] = [
     materi: [
       { title: "Variabel-variabel dalam Efek Doppler", key: "variables" },
       { title: "Apa itu Pertanyaan Penelitian yang Baik?", key: "good-question" },
-      { title: "Jenis-jenis Pertanyaan Penelitian", key: "question-types" },
     ],
     lkpdTitle: "Rumuskan Pertanyaan Penelitianmu",
     lkpdKey: "formulate-question",
@@ -65,8 +64,8 @@ export const stages: Stage[] = [
     slug: "perumusan-hipotesis",
     title: "Hypothesis Formulation",
     titleId: "Perumusan Hipotesis",
-    blurbId: "Kembangkan prediksi logis berdasarkan prinsip gelombang bunyi",
-    thinking: "Inferensi",
+    blurbId: "Membuat hipotesis dari rumusan masalah yang telah dibuat sebelumnya",
+    thinking: "Inference",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menggunakan inferensi untuk menarik kesimpulan logis dari pengetahuan dan observasi sebelumnya, membangun prediksi yang dapat diuji tentang perilaku gelombang bunyi.",
     Icon: Lightbulb,
@@ -83,8 +82,8 @@ export const stages: Stage[] = [
     slug: "pengumpulan-data",
     title: "Data Collection",
     titleId: "Pengumpulan Data",
-    blurbId: "Jelajahi simulasi interaktif dan kumpulkan data eksperimental",
-    thinking: "Analisis + Evaluasi",
+    blurbId: "Mengumpulkan data dari simulasi yang dilakukan",
+    thinking: "Analysis + Evaluation",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menganalisis data yang dikumpulkan dengan mengidentifikasi pola dan hubungan, lalu mengevaluasi keakuratan, relevansi, dan keandalannya untuk menguji hipotesismu.",
     Icon: Database,
@@ -101,8 +100,8 @@ export const stages: Stage[] = [
     slug: "pengujian-hipotesis",
     title: "Hypothesis Testing",
     titleId: "Pengujian Hipotesis",
-    blurbId: "Analisis data dan bandingkanlah hasilnya dengan prediksimu",
-    thinking: "Evaluasi + Inferensi",
+    blurbId: "Menganalisis data simulasi dan menguji hipotesis yang telah dibuat sebelumnya",
+    thinking: "Evaluation + Inference",
     thinkingDetailId:
       "Pada tahap ini, kamu akan mengevaluasi kekuatan dan kredibilitas datamu dengan membandingkannya terhadap hipotesis, lalu menarik inferensi apakah bukti mendukung atau menyangkal prediksimu.",
     Icon: FlaskConical,
@@ -119,8 +118,8 @@ export const stages: Stage[] = [
     slug: "penarikan-kesimpulan",
     title: "Conclusion Drawing",
     titleId: "Penarikan Kesimpulan",
-    blurbId: "Sintesis temuan dan hubungkan dengan aplikasi dunia nyata",
-    thinking: "Eksplanasi",
+    blurbId: "Membuat kesimpulan dari semua tahapan yang telah dilakukan",
+    thinking: "Explanation",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menjelaskan temuanmu dengan menyatakan kesimpulan secara jelas dan membenarkannya dengan bukti.",
     Icon: CheckCircle2,
