@@ -132,152 +132,345 @@ interface IntensitasEntry {
   P: number;
   r: number;
   I: number;
-  TI: number;
+  TI: string;        // user-entered, manual
+  rowNumber?: number; // spreadsheet row, returned by edge function
+  saveStatus?: "idle" | "saving" | "saved" | "error";
 }
 
 const I0 = 1e-12; // ambang pendengaran W/m²
 
+const formatI = (I: number) =>
+  I >= 1e-4 ? I.toFixed(4) : I.toExponential(2);
+
+/* ---- Visualisasi Penyebaran Energi (SVG) ---- */
+const EnergyVisualization = ({ P, r }: { P: number; r: number }) => {
+  // Map r (1..100m) into svg x position (40..360)
+  const svgW = 400;
+  const svgH = 180;
+  const sourceX = 40;
+  const sourceY = svgH / 2;
+  const observerX = sourceX + (Math.min(r, 100) / 100) * (svgW - 80);
+
+  // Concentric "energy" rings — opacity decays with distance & grows with P
+  const rings = [1, 2, 3, 4, 5, 6];
+  const powerBoost = Math.min(1, P / 1000); // 0..1
+
+  return (
+    <div className="relative rounded-2xl border border-primary/20 bg-gradient-to-br from-rose-50 via-white to-indigo-50 overflow-hidden">
+      {/* Header / legend */}
+      <div className="flex items-center justify-between px-3 pt-3 text-xs">
+        <span className="font-semibold text-foreground">Visualisasi Penyebaran Energi</span>
+        <div className="flex items-center gap-2 text-[11px]">
+          <span className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-500" /> Tinggi
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-info" /> Rendah
+          </span>
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-44">
+        <defs>
+          <radialGradient id="energyGrad" cx="0" cy="0.5" r="1">
+            <stop offset="0%" stopColor="hsl(0 85% 60%)" stopOpacity="0.55" />
+            <stop offset="40%" stopColor="hsl(28 90% 60%)" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="hsl(220 80% 60%)" stopOpacity="0.05" />
+          </radialGradient>
+        </defs>
+
+        {/* Energy field */}
+        <rect
+          x={sourceX - 10}
+          y={0}
+          width={svgW - sourceX + 10}
+          height={svgH}
+          fill="url(#energyGrad)"
+          opacity={0.7 + 0.3 * powerBoost}
+        />
+
+        {/* Concentric rings */}
+        {rings.map((i) => {
+          const radius = i * 28;
+          const op = Math.max(0.05, (0.45 - i * 0.06) * (0.5 + powerBoost));
+          return (
+            <circle
+              key={i}
+              cx={sourceX}
+              cy={sourceY}
+              r={radius}
+              fill="none"
+              stroke={i <= 2 ? "hsl(0 85% 60%)" : i <= 4 ? "hsl(28 90% 60%)" : "hsl(220 80% 60%)"}
+              strokeWidth={1.4}
+              opacity={op}
+            >
+              <animate
+                attributeName="r"
+                from={radius}
+                to={radius + 8}
+                dur={`${2 + i * 0.3}s`}
+                repeatCount="indefinite"
+              />
+              <animate
+                attributeName="opacity"
+                values={`${op};${op * 0.3};${op}`}
+                dur={`${2 + i * 0.3}s`}
+                repeatCount="indefinite"
+              />
+            </circle>
+          );
+        })}
+
+        {/* Distance line */}
+        <line
+          x1={sourceX}
+          y1={sourceY}
+          x2={observerX}
+          y2={sourceY}
+          stroke="hsl(270 60% 55%)"
+          strokeWidth={1.2}
+          strokeDasharray="4 4"
+          opacity={0.7}
+        />
+        {/* Vertical guide at observer */}
+        <line
+          x1={observerX}
+          y1={20}
+          x2={observerX}
+          y2={svgH - 20}
+          stroke="hsl(270 60% 55%)"
+          strokeWidth={1}
+          strokeDasharray="3 3"
+          opacity={0.5}
+        />
+        <text
+          x={observerX}
+          y={16}
+          textAnchor="middle"
+          className="fill-violet-700"
+          fontSize="11"
+          fontWeight="600"
+        >
+          P ({r}m)
+        </text>
+
+        {/* Source */}
+        <circle cx={sourceX} cy={sourceY} r={9} fill="hsl(35 95% 55%)" />
+        <circle cx={sourceX} cy={sourceY} r={4} fill="white" />
+        <text x={sourceX} y={svgH - 8} textAnchor="middle" fontSize="10" className="fill-foreground/60">
+          Sumber
+        </text>
+
+        {/* Observer */}
+        <circle cx={observerX} cy={sourceY} r={7} fill="hsl(15 70% 35%)" />
+      </svg>
+    </div>
+  );
+};
+
 export const IntensitasSimulatorLKPD = () => {
-  const [P, setP] = useState(100); // Watt
-  const [r, setR] = useState(5); // meter
+  const [P, setP] = useState(448); // Watt
+  const [r, setR] = useState(90); // meter
   const [entries, setEntries] = useState<IntensitasEntry[]>([]);
+  const [recording, setRecording] = useState(false);
+  const debounceTimers = useRef<Record<number, number>>({});
+  const navigate = useNavigate();
+  const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
 
-  const safeR = Math.max(r, 0.1);
-  const I = P / (4 * Math.PI * safeR * safeR); // W/m²
-  const TI = 10 * Math.log10(I / I0);
-  const safeAtIThreshold = TI > 85;
+  const safeR = Math.max(r, 1);
+  const I = P / (4 * Math.PI * safeR * safeR);
 
-  // Posisi pengamat di canvas (skala 1m = 8px, max 100m)
-  const px = Math.min(safeR * 4, 220);
+  const handleRecord = async () => {
+    if (!isSignedIn || !user) {
+      toast({
+        title: "Login dulu",
+        description: "Kamu perlu login untuk mencatat data ke spreadsheet.",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+    setRecording(true);
+    try {
+      const token = await getToken();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/append-intensity-data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            power: P,
+            distance: safeR,
+            intensity: Number(I.toExponential(4)),
+          }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal mencatat data");
 
-  const handleRecord = () => {
-    const entry: IntensitasEntry = {
-      no: entries.length + 1,
-      P,
-      r: safeR,
-      I: Number(I.toExponential(2)),
-      TI: Number(TI.toFixed(1)),
-    };
-    setEntries((prev) => [...prev, entry]);
-    toast({ title: "Data dicatat", description: `I = ${I.toExponential(2)} W/m², TI = ${TI.toFixed(1)} dB` });
+      setEntries((prev) => [
+        ...prev,
+        {
+          no: data.no ?? prev.length + 1,
+          P,
+          r: safeR,
+          I,
+          TI: "",
+          rowNumber: data.rowNumber,
+          saveStatus: "idle",
+        },
+      ]);
+      toast({ title: "Data berhasil dicatat", description: `P=${P}W, r=${safeR}m, I=${formatI(I)} W/m²` });
+    } catch (err: any) {
+      console.error("intensity record error", err);
+      toast({
+        title: "Gagal mencatat data. Coba lagi.",
+        description: err?.message ?? "",
+        variant: "destructive",
+      });
+    } finally {
+      setRecording(false);
+    }
   };
+
+  const updateTiOnServer = async (index: number, value: string) => {
+    const entry = entries[index];
+    if (!entry?.rowNumber) return;
+    setEntries((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, saveStatus: "saving" } : e)),
+    );
+    try {
+      const token = await getToken();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/update-intensity-ti`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ rowNumber: entry.rowNumber, tiHitung: value }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal menyimpan");
+      setEntries((prev) =>
+        prev.map((e, i) => (i === index ? { ...e, saveStatus: "saved" } : e)),
+      );
+    } catch (err) {
+      console.error("intensity TI update error", err);
+      setEntries((prev) =>
+        prev.map((e, i) => (i === index ? { ...e, saveStatus: "error" } : e)),
+      );
+    }
+  };
+
+  const handleTiChange = (index: number, value: string) => {
+    setEntries((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, TI: value, saveStatus: "idle" } : e)),
+    );
+    // Debounce server update
+    const timers = debounceTimers.current;
+    if (timers[index]) window.clearTimeout(timers[index]);
+    timers[index] = window.setTimeout(() => updateTiOnServer(index, value), 700);
+  };
+
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach((t) => window.clearTimeout(t));
+    };
+  }, []);
 
   return (
     <div className="space-y-3">
       {/* Visualisasi */}
-      <div className="rounded-xl bg-card border border-border p-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold">Visualisasi Perambatan Energi</p>
-          <span className="text-[10px] text-muted-foreground">P = {P} W</span>
-        </div>
-        <div className="relative h-32 rounded-lg bg-gradient-to-r from-info/5 to-card overflow-hidden">
-          {/* Sumber */}
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
-            <div className="h-7 w-7 rounded-full bg-rose-500 flex items-center justify-center shadow-lg">
-              <Volume2 className="h-3.5 w-3.5 text-white" />
-            </div>
+      <EnergyVisualization P={P} r={safeR} />
+
+      {/* Sliders */}
+      <div className="rounded-2xl bg-card border border-primary/15 p-4 space-y-3 shadow-card">
+        <div>
+          <div className="flex justify-between text-sm">
+            <span className="font-semibold">Daya Sumber (P)</span>
+            <span className="font-bold text-amber-600">{P} W</span>
           </div>
-          {/* Gelombang konsentris */}
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="absolute left-6 top-1/2 -translate-y-1/2 rounded-full border-2 border-info/40"
-              style={{
-                width: `${i * 50}px`,
-                height: `${i * 50}px`,
-                transform: `translate(-50%, -50%)`,
-                opacity: 1 - i * 0.18,
-              }}
-            />
-          ))}
-          {/* Pengamat */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 z-10 transition-all"
-            style={{ left: `${24 + px}px` }}
-          >
-            <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
-              👤
-            </div>
+          <input
+            type="range"
+            min={1}
+            max={1000}
+            step={1}
+            value={P}
+            onChange={(e) => setP(Number(e.target.value))}
+            className="w-full mt-1 accent-amber-500"
+          />
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>1 W</span>
+            <span>1000 W</span>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex justify-between text-sm">
+            <span className="font-semibold">Jarak Pengamat (r)</span>
+            <span className="font-bold text-violet-600">{safeR} m</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={100}
+            step={1}
+            value={r}
+            onChange={(e) => setR(Number(e.target.value))}
+            className="w-full mt-1 accent-violet-600"
+          />
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>1 m</span>
+            <span>100 m</span>
           </div>
         </div>
       </div>
 
-      {/* Slider Daya Sumber */}
-      <div className="rounded-xl bg-card border border-border p-3 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span>Daya Sumber (P)</span>
-          <span className="font-bold text-info">{P} W</span>
+      {/* Hasil pengukuran */}
+      <div className="rounded-2xl border border-primary/15 bg-violet-50/60 p-4 space-y-3">
+        <p className="text-sm font-semibold flex items-center gap-1">📊 Hasil Pengukuran:</p>
+        <div className="rounded-xl bg-card border border-violet-200 p-3 text-center">
+          <p className="text-xs text-info">Intensitas (I)</p>
+          <p className="font-bold text-foreground text-lg leading-tight">{formatI(I)}</p>
+          <p className="text-[10px] text-muted-foreground">W/m²</p>
         </div>
-        <input
-          type="range"
-          min={1}
-          max={1000}
-          step={1}
-          value={P}
-          onChange={(e) => setP(Number(e.target.value))}
-          className="w-full accent-info"
-        />
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>1 W</span>
-          <span>1000 W</span>
+        <div className="rounded-xl bg-amber-50 border border-amber-300 p-3 text-[11px] text-amber-900 leading-relaxed">
+          ⚠️ <b>Taraf Intensitas (TI)</b> tidak ditampilkan — hitung sendiri menggunakan rumus{" "}
+          <span className="font-mono">TI = 10 log(I / I₀)</span> dan isi di kolom tabel!
         </div>
-
-        <div className="flex justify-between text-sm pt-2">
-          <span>Jarak Pengamat (r)</span>
-          <span className="font-bold text-lkpd">{safeR} m</span>
-        </div>
-        <input
-          type="range"
-          min={1}
-          max={100}
-          step={1}
-          value={r}
-          onChange={(e) => setR(Number(e.target.value))}
-          className="w-full accent-lkpd"
-        />
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>1 m</span>
-          <span>100 m</span>
+        <div className="rounded-lg bg-card border border-border p-2 text-center font-mono text-[11px] text-foreground/80">
+          I = {P}/(4π×{safeR}²) = {formatI(I)} W/m²
         </div>
       </div>
 
-      {/* Hasil Perhitungan */}
-      <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-        <p className="text-sm font-semibold text-emerald-800">📊 Hasil Perhitungan:</p>
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          <div className="rounded-lg bg-card border border-emerald-100 p-2 text-center">
-            <p className="text-xs text-info">Intensitas (I)</p>
-            <p className="font-bold text-foreground text-sm">{I.toExponential(2)}</p>
-            <p className="text-[10px] text-muted-foreground">W/m²</p>
-          </div>
-          <div className="rounded-lg bg-card border border-emerald-100 p-2 text-center">
-            <p className="text-xs text-lkpd">Taraf Intensitas (TI)</p>
-            <p className="font-bold text-foreground text-sm">{TI.toFixed(1)}</p>
-            <p className="text-[10px] text-muted-foreground">dB</p>
-          </div>
-        </div>
-        {safeAtIThreshold && (
-          <div className="mt-2 rounded-lg bg-amber-50 border border-amber-300 p-2 text-[11px] text-amber-900">
-            ⚠ <b>Taraf Intensitas {TI.toFixed(0)} dB</b> sudah di atas batas aman pendengaran (85 dB) dalam
-            paparan lama!
-          </div>
-        )}
-      </div>
-
+      {/* Catat data */}
       <button
         onClick={handleRecord}
-        className="w-full rounded-xl bg-lkpd text-white py-3 font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+        disabled={recording}
+        className="w-full rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 text-white py-3.5 font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60 shadow-elevated"
       >
-        <Database className="h-4 w-4" /> Catat Data (P={P}W, r={safeR}m)
+        <Database className="h-4 w-4" />
+        {recording ? "Mencatat..." : `Catat Data (P=${P}W, r=${safeR}m)`}
       </button>
 
-      <div className="rounded-xl bg-card border border-border p-3 text-sm">
+      {/* Tabel data terkumpul */}
+      <div className="rounded-2xl bg-card border border-primary/15 p-3 text-sm">
         <div className="flex items-center justify-between">
           <p className="font-semibold">Data Terkumpul</p>
           {entries.length > 0 && (
             <button
               onClick={() => setEntries([])}
               className="text-xs text-rose-600 flex items-center gap-1 hover:underline"
+              title="Hanya menghapus tampilan lokal — data di spreadsheet tetap tersimpan."
             >
               <Trash2 className="h-3 w-3" /> Hapus
             </button>
@@ -288,45 +481,75 @@ export const IntensitasSimulatorLKPD = () => {
             Belum ada data. Atur P & r lalu tekan "Catat Data".
           </p>
         ) : (
-          <div className="mt-2 overflow-hidden rounded-lg border border-border">
+          <div className="mt-2 overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-xs">
               <thead className="bg-muted">
                 <tr className="text-left">
-                  <th className="p-2 font-semibold">No</th>
+                  <th className="p-2 font-semibold">#</th>
                   <th className="p-2 font-semibold">P (W)</th>
                   <th className="p-2 font-semibold">r (m)</th>
                   <th className="p-2 font-semibold">I (W/m²)</th>
-                  <th className="p-2 font-semibold">TI (dB)</th>
+                  <th className="p-2 font-semibold bg-amber-50">TI hitung (dB) ✏️</th>
                 </tr>
               </thead>
               <tbody>
-                {entries.map((e) => (
-                  <tr key={e.no} className="border-t border-border">
+                {entries.map((e, i) => (
+                  <tr key={`${e.no}-${i}`} className="border-t border-border">
                     <td className="p-2">{e.no}</td>
                     <td className="p-2">{e.P}</td>
                     <td className="p-2">{e.r}</td>
-                    <td className="p-2 font-semibold">{e.I}</td>
-                    <td className="p-2 font-bold text-lkpd">{e.TI}</td>
+                    <td className="p-2 font-semibold">{formatI(e.I)}</td>
+                    <td className="p-2 bg-amber-50/40">
+                      <input
+                        value={e.TI}
+                        onChange={(ev) => handleTiChange(i, ev.target.value)}
+                        placeholder="hitung..."
+                        className="w-24 rounded-md border border-amber-300 bg-card px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                      {e.saveStatus === "saving" && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Menyimpan...</p>
+                      )}
+                      {e.saveStatus === "saved" && (
+                        <p className="text-[10px] text-emerald-600 mt-0.5">Tersimpan</p>
+                      )}
+                      {e.saveStatus === "error" && (
+                        <p className="text-[10px] text-rose-600 mt-0.5">Gagal menyimpan</p>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
+        <p className="text-[11px] text-foreground/70 mt-2 leading-snug">
+          💡 Isi kolom <b>TI hitung</b> dengan: TI = 10 × log₁₀(I / 10⁻¹²) — data ini akan muncul di halaman
+          Pengujian Hipotesis.
+        </p>
       </div>
 
-      <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-        <p className="font-semibold text-lkpd">💡 Pertanyaan Analisis:</p>
-        <p className="mt-1">
-          Bagaimana nilai intensitas bunyi (I) berubah jika r dilipat dua? Berdasarkan datamu, apakah konsisten
-          dengan hukum kuadrat terbalik (I ∝ 1/r²)?
+      {/* Pertanyaan analisis */}
+      <div className="rounded-2xl bg-violet-50/70 border border-primary/15 p-3">
+        <p className="text-sm font-semibold text-lkpd flex items-center gap-1">📊 Pertanyaan Analisis:</p>
+        <p className="text-xs text-foreground/80 mt-1">
+          Bagaimana nilai intensitas bunyi (I) ketika jarak pengamat (r) diubah-ubah?
         </p>
+        <textarea
+          placeholder="Berdasarkan data yang saya kumpulkan, ketika jarak..."
+          className="w-full mt-2 rounded-lg border border-primary/20 bg-card p-2 text-xs min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
       </div>
     </div>
   );
 };
 
-/* ============================ Tahap 5: Data & Analisis ============================ */
+/* ============================ Video YouTube + Simulator wrapper ============================ */
+export const IntensitasObservationVideoLKPD = () => {
+  // (Reserved — currently observation LKPD shown in stage 1, video lives in simulator stage)
+  return null;
+};
+
+
 export const IntensitasDataAnalysisLKPD = () => (
   <div className="space-y-3">
     <div className="rounded-xl bg-surface-soft-purple p-3">
