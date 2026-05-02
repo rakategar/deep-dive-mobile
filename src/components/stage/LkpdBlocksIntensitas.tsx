@@ -1,8 +1,31 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Volume2, MessageCircle, Lightbulb, Trash2, Database, Play } from "lucide-react";
+import { Volume2, MessageCircle, Lightbulb, Trash2, Database, Play, Check, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+/* ----- Shared helpers for spreadsheet fetch ----- */
+interface IntensityRow {
+  no: number;
+  rowNumber: number;
+  P: number;
+  r: number;
+  I: number;
+  TI: string;
+}
+
+async function fetchUserIntensityRows(token: string | null): Promise<IntensityRow[]> {
+  if (!token) return [];
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const res = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/list-intensity-data`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal memuat data");
+  return (data.rows ?? []) as IntensityRow[];
+}
+
 
 /* ============================ Tahap 1: Observasi ============================ */
 export const IntensitasObservationLKPD = () => (
