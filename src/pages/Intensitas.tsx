@@ -66,8 +66,20 @@ const Intensitas = () => {
         <div className="mt-5 rounded-3xl bg-card p-5 shadow-card">
           <h3 className="font-semibold text-foreground">Buku Ajar & Modul Latihan Soal</h3>
           <div className="grid grid-cols-3 gap-3 mt-4">
-            <ResourceTile Icon={BookOpen} label="Buku Ajar" tint="bg-surface-soft-blue" iconColor="text-info" />
-            <ResourceTile Icon={FileText} label="Modul" tint="bg-surface-pink" iconColor="text-primary" />
+            <ResourceTile
+              Icon={BookOpen}
+              label="Buku Ajar"
+              tint="bg-surface-soft-blue"
+              iconColor="text-info"
+              onClick={() => navigate("/intensitas/buku-ajar")}
+            />
+            <ResourceTile
+              Icon={FileText}
+              label="Modul"
+              tint="bg-surface-pink"
+              iconColor="text-primary"
+              onClick={() => navigate("/intensitas/modul")}
+            />
             <ResourceTile Icon={Pencil} label="Latihan Soal" tint="bg-surface-pink" iconColor="text-stage-5" />
           </div>
         </div>
@@ -110,18 +122,24 @@ const ResourceTile = ({
   label,
   tint,
   iconColor,
+  onClick,
 }: {
   Icon: typeof BookOpen;
   label: string;
   tint: string;
   iconColor: string;
+  onClick?: () => void;
 }) => (
-  <div className="flex flex-col items-center">
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex flex-col items-center active:scale-[0.97] transition disabled:opacity-100"
+  >
     <div className={`h-14 w-14 rounded-2xl ${tint} flex items-center justify-center`}>
       <Icon className={`h-6 w-6 ${iconColor}`} strokeWidth={2} />
     </div>
     <span className="text-xs text-foreground mt-2 text-center">{label}</span>
-  </div>
+  </button>
 );
 
 export default Intensitas;

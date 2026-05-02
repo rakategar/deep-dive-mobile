@@ -1,1 +1,7 @@
 project_id = "zdpmnnbycesmekuoomeb"
+
+[functions.append-intensity-data]
+verify_jwt = false
+
+[functions.update-intensity-ti]
+verify_jwt = false
