@@ -48,9 +48,8 @@ export const Variables = () => (
       <div key={v.sym} className="rounded-2xl bg-surface-soft-blue p-3 flex gap-3">
         <span className="font-display italic text-2xl text-info w-8 text-center">{v.sym}</span>
         <div className="flex-1">
-          <p className="font-semibold text-foreground text-sm">
-            {v.name} <span className="text-info text-xs ml-1">Satuan: {v.unit}</span>
-          </p>
+          <p className="font-semibold text-foreground text-sm">{v.name}</p>
+          <p className="text-info text-xs mt-0.5">Satuan: {v.unit}</p>
           <p className="text-xs text-foreground/70 mt-0.5 leading-snug">{v.desc}</p>
         </div>
       </div>
