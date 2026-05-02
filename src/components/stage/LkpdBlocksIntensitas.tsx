@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Volume2, MessageCircle, Lightbulb, Trash2, Database } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { Volume2, MessageCircle, Lightbulb, Trash2, Database, Play } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 /* ============================ Tahap 1: Observasi ============================ */
