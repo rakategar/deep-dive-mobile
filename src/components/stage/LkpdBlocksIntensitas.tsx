@@ -800,6 +800,7 @@ export const IntensitasDataAnalysisLKPD = () => {
           placeholder="contoh: Hipotesis saya didukung — data menunjukkan bahwa I ∝ 1/r²..."
           className="w-full mt-2 rounded-lg border border-emerald-200 bg-card p-2.5 text-xs min-h-20 outline-none focus:ring-2 focus:ring-emerald-300"
         />
+      </div>
     </div>
   );
 };
