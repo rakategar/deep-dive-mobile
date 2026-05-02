@@ -74,11 +74,6 @@ export const FormulateQuestionLKPD = () => (
         </div>
       ))}
     </div>
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <p className="font-semibold text-lkpd flex items-center gap-1">🎯 Cek Kualitas:</p>
-      <p>✓ Apakah pertanyaanmu berfokus pada variabel Efek Doppler?</p>
-      <p>✓ Dapatkah kamu mengujinya dengan simulator atau eksperimen?</p>
-    </div>
   </div>
 );
 
