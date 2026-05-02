@@ -570,7 +570,7 @@ export const IntensitasSimulatorLKPD = () => {
               <tbody>
                 {entries.map((e, i) => (
                   <tr key={`${e.no}-${i}`} className="border-t border-border">
-                    <td className="p-2">{e.no}</td>
+                    <td className="p-2">{i + 1}</td>
                     <td className="p-2">{e.P}</td>
                     <td className="p-2">{e.r}</td>
                     <td className="p-2 font-semibold">{formatI(e.I)}</td>
@@ -743,7 +743,7 @@ export const IntensitasDataAnalysisLKPD = () => {
                           : ""
                       }`}
                     >
-                      <td className="p-2">{e.no}</td>
+                      <td className="p-2">{i + 1}</td>
                       <td className="p-2">{e.P}</td>
                       <td className="p-2">{e.r}</td>
                       <td className="p-2 font-mono">

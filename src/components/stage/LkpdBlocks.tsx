@@ -444,7 +444,7 @@ export const SimulatorLKPD = () => {
               <tbody>
                 {entries.map((e, i) => (
                   <tr key={`${e.no}-${i}`} className="border-t border-border animate-fade-in">
-                    <td className="p-2">{e.no}</td>
+                    <td className="p-2">{i + 1}</td>
                     <td className="p-2">
                       <span
                         className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
@@ -617,7 +617,7 @@ export const DataTableLKPD = () => {
                           : ""
                       }`}
                     >
-                      <td className="p-2">{e.no}</td>
+                      <td className="p-2">{i + 1}</td>
                       <td className="p-2">{e.fs}</td>
                       <td className="p-2">{e.vs}</td>
                       <td className="p-2">
