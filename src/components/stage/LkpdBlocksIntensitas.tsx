@@ -302,6 +302,32 @@ export const IntensitasSimulatorLKPD = () => {
   const safeR = Math.max(r, 1);
   const I = P / (4 * Math.PI * safeR * safeR);
 
+  // Load existing rows from spreadsheet on mount
+  useEffect(() => {
+    if (!isSignedIn) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const rows = await fetchUserIntensityRows(token);
+        setEntries(
+          rows.map((r) => ({
+            no: r.no,
+            P: r.P,
+            r: r.r,
+            I: r.I,
+            TI: r.TI,
+            rowNumber: r.rowNumber,
+            saveStatus: "idle",
+          })),
+        );
+      } catch (err) {
+        console.error("load intensity rows error", err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
+
+
   const handleRecord = async () => {
     if (!isSignedIn || !user) {
       toast({
