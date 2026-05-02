@@ -16,6 +16,7 @@ import Home from "./pages/Home";
 import Doppler from "./pages/Doppler";
 import Intensitas from "./pages/Intensitas";
 import Stage from "./pages/Stage";
+import StageIntensitas from "./pages/StageIntensitas";
 import Certificate from "./pages/Certificate";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -65,6 +66,7 @@ const AppRoutes = () => (
       <Route path="/intensitas" element={<RequireAuth><Intensitas /></RequireAuth>} />
       <Route path="/doppler" element={<RequireAuth><Doppler /></RequireAuth>} />
       <Route path="/stage/:slug" element={<RequireAuth><Stage /></RequireAuth>} />
+      <Route path="/intensitas/stage/:slug" element={<RequireAuth><StageIntensitas /></RequireAuth>} />
       <Route path="/certificate" element={<RequireAuth><Certificate /></RequireAuth>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
