@@ -258,21 +258,6 @@ export const SimulatorLKPD = () => {
         </div>
       </div>
 
-      <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-        <p className="text-sm font-semibold text-emerald-800 flex items-center gap-1">
-          📊 Hasil Perhitungan Efek Doppler:
-        </p>
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          <div className="rounded-lg bg-card border border-emerald-100 p-2 text-center">
-            <p className="text-xs text-info">f₀ (Sumber)</p>
-            <p className="font-bold text-foreground">{fs} Hz</p>
-          </div>
-          <div className="rounded-lg bg-card border border-emerald-100 p-2 text-center">
-            <p className="text-xs text-lkpd">f' (Teramati)</p>
-            <p className="font-bold text-foreground">{fp} Hz</p>
-          </div>
-        </div>
-      </div>
 
       <button
         onClick={handleRecord}
