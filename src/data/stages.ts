@@ -100,10 +100,10 @@ export const stages: Stage[] = [
     slug: "pengujian-hipotesis",
     title: "Hypothesis Testing",
     titleId: "Pengujian Hipotesis",
-    blurbId: "Menganalisis data simulasi dan menguji hipotesis yang telah dibuat sebelumnya",
-    thinking: "Evaluation + Inference",
+    blurbId: "Analisis data dan bandingkanlah hasilnya dengan prediksimu",
+    thinking: "Evaluasi + Inferensi",
     thinkingDetailId:
-      "Pada tahap ini, kamu akan mengevaluasi kekuatan dan kredibilitas datamu dengan membandingkannya terhadap hipotesis, lalu menarik inferensi apakah bukti mendukung atau menyangkal prediksimu.",
+      "Pada tahap ini, kamu akan **mengevaluasi** kekuatan dan kredibilitas datamu dengan membandingkannya terhadap hipotesis, lalu menarik **inferensi** apakah bukti mendukung atau menyangkal prediksimu.",
     Icon: FlaskConical,
     colorVar: "bg-stage-5",
     textColor: "text-stage-5",
