@@ -41,26 +41,7 @@ const Intensitas = () => {
           </p>
         </div>
 
-        {/* Critical thinking card */}
-        <div className="mt-6 rounded-3xl bg-primary text-primary-foreground p-5 shadow-card">
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-primary-foreground/15 flex items-center justify-center shrink-0">
-              <Brain className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-base leading-tight">Terintegrasi Keterampilan Berpikir Kritis</h2>
-              <p className="text-sm text-primary-foreground/80">Facione's Framework</p>
-            </div>
-          </div>
-          <p className="text-sm text-primary-foreground/90 mt-4 leading-relaxed">
-            Setiap tahapan inquiry mengembangkan keterampilan berpikir kritis spesifik:{" "}
-            <span className="font-semibold">Interpretation</span>,{" "}
-            <span className="font-semibold">Analysis</span>,{" "}
-            <span className="font-semibold">Inference</span>,{" "}
-            <span className="font-semibold">Evaluation</span>, dan{" "}
-            <span className="font-semibold">Explanation</span>.
-          </p>
-        </div>
+
 
         {/* Resources */}
         <div className="mt-5 rounded-3xl bg-card p-5 shadow-card">
