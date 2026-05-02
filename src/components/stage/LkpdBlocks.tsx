@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Database, Pause, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, Trash2, FileSpreadsheet } from "lucide-react";
+import { Database, Pause, Play, RotateCcw, Siren, MessageCircle, Lightbulb, Target, Trash2 } from "lucide-react";
 import { DopplerWaveCanvas, type DopplerWaveCanvasHandle } from "./DopplerWaveCanvas";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,23 +23,14 @@ export const ObservationLKPD = () => (
       <span className="text-sm font-medium">Sirine Ambulans</span>
     </button>
     <p className="text-sm font-medium text-foreground mt-3">Catat hasil observasimu tentang Efek Doppler:</p>
-    <div className="rounded-xl border border-border bg-card p-3 text-xs text-foreground/75 space-y-1.5">
-      <p>Apa yang kamu perhatikan tentang perubahan bunyi? Pertimbangkan:</p>
-      <p>• Apa yang terjadi pada nada saat sumber mendekatimu?</p>
-      <p>• Bagaimana nada berubah saat sumber menjauh?</p>
-      <p>• Apakah sumber bunyi itu sendiri berubah bunyinya?</p>
-      <p>• Faktor apa yang memengaruhi seberapa besar perubahannya?</p>
-    </div>
-    <textarea
-      placeholder="Tuliskan observasimu di sini... contoh: Saat ambulans mendekat, suara sirine terdengar lebih tinggi dan makin keras, lalu tiba-tiba menjadi lebih rendah setelah melewati saya..."
-      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
-    />
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <b className="text-lkpd">💡 Pertanyaan Refleksi:</b>
-      <p className="mt-1">
-        Menurut kamu, apakah perubahan nada yang terdengar bergantung pada seberapa cepat sumber bergerak? Semakin
-        cepat berarti perubahan lebih besar? Tuliskan perkiraanmu!
+    <div className="rounded-xl border border-border bg-card p-3">
+      <p className="text-sm text-foreground/85">
+        Mengapa nada suara ambulans yang lewat terdengar lebih tinggi saat mendekat dan lebih rendah saat menjauh?
       </p>
+      <textarea
+        placeholder="Tuliskan observasimu di sini... contoh: Saat ambulans mendekat, suara sirine terdengar lebih tinggi dan makin keras, lalu tiba-tiba menjadi lebih rendah setelah melewati saya..."
+        className="w-full mt-2 rounded-lg border border-border bg-card p-3 text-xs text-foreground/75 min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+      />
     </div>
   </div>
 );
@@ -83,11 +74,6 @@ export const FormulateQuestionLKPD = () => (
         </div>
       ))}
     </div>
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <p className="font-semibold text-lkpd flex items-center gap-1">🎯 Cek Kualitas:</p>
-      <p>✓ Apakah pertanyaanmu berfokus pada variabel Efek Doppler?</p>
-      <p>✓ Dapatkah kamu mengujinya dengan simulator atau eksperimen?</p>
-    </div>
   </div>
 );
 
@@ -103,25 +89,11 @@ export const HypothesisLKPD = () => (
       </p>
       <p className="text-xs text-foreground/80 mt-1"><b>Karena</b> ...</p>
     </div>
-    <p className="text-sm font-medium">Prediksi hubungan antara variabel Doppler:</p>
-    <div className="grid grid-cols-2 gap-2">
-      {["Berbanding lurus", "Berbanding terbalik", "f' > f₀ saat mendekati", "f' < f₀ saat menjauh"].map((c) => (
-        <button key={c} className="rounded-xl border border-border bg-card text-xs px-2 py-2 hover:bg-secondary">
-          {c}
-        </button>
-      ))}
-    </div>
+    <p className="text-sm font-medium">Tuliskan hipotesismu secara lengkap:</p>
     <textarea
       placeholder="contoh: Jika kecepatan sumber bunyi (vₛ) semakin besar saat mendekati pengamat, maka ..."
-      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
+      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-28 outline-none focus:ring-2 focus:ring-lkpd/30"
     />
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <p className="font-semibold text-lkpd">✓ Daftar Periksa Hipotesis:</p>
-      <p>☐ Menyebutkan variabel bebas dengan jelas</p>
-      <p>☐ Menyebutkan variabel terikat dengan jelas</p>
-      <p>☐ Menyertakan penalaran berbasis rumus Doppler</p>
-      <p>☐ Membedakan kondisi mendekati dan menjauh</p>
-    </div>
   </div>
 );
 
@@ -286,21 +258,6 @@ export const SimulatorLKPD = () => {
         </div>
       </div>
 
-      <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-        <p className="text-sm font-semibold text-emerald-800 flex items-center gap-1">
-          📊 Hasil Perhitungan Efek Doppler:
-        </p>
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          <div className="rounded-lg bg-card border border-emerald-100 p-2 text-center">
-            <p className="text-xs text-info">f₀ (Sumber)</p>
-            <p className="font-bold text-foreground">{fs} Hz</p>
-          </div>
-          <div className="rounded-lg bg-card border border-emerald-100 p-2 text-center">
-            <p className="text-xs text-lkpd">f' (Teramati)</p>
-            <p className="font-bold text-foreground">{fp} Hz</p>
-          </div>
-        </div>
-      </div>
 
       <button
         onClick={handleRecord}
@@ -363,69 +320,65 @@ export const SimulatorLKPD = () => {
           </div>
         )}
       </div>
+
+      <div className="rounded-xl border border-lkpd/30 bg-surface-soft-purple p-3">
+        <p className="text-sm font-semibold text-lkpd flex items-center gap-2">
+          📊 Pertanyaan Analisis:
+        </p>
+        <p className="text-xs text-foreground/80 mt-1">
+          Bagaimana pola muka gelombang berbeda antara mendekati dan menjauh?
+        </p>
+        <textarea
+          placeholder="Ketika sumber mendekati pengamat, pola muka gelombang terlihat... sedangkan saat menjauh..."
+          className="w-full mt-2 rounded-lg border border-lkpd/30 bg-card p-2.5 text-xs min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
+      </div>
     </div>
   );
 };
 
 export const DataTableLKPD = () => {
-  const rows = [0, 30, 60, 90, 120, 150, 180, 200];
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <button className="rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-700 text-sm py-2">
-          🚗 → Mendekati
-        </button>
-        <button className="rounded-xl bg-card border border-border text-sm py-2">← 🚗 Menjauh</button>
-      </div>
-      <div className="rounded-xl border border-border overflow-hidden text-xs">
-        <div className="bg-surface-soft-blue p-2">
-          <p className="font-mono">🧮 Hitung fp menggunakan rumus Doppler</p>
-          <p className="font-mono text-foreground/70">vp = 0 m/s · fs = 500 Hz · v = 343 m/s</p>
+      <div className="rounded-xl border border-emerald-300 bg-emerald-50/60 p-3">
+        <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
+          <Database className="h-4 w-4" /> Data dari Pengumpulan Data
+        </p>
+        <p className="text-xs text-emerald-900 mt-1">
+          Cek kolom <b>f' hitung</b>, apakah nilainya sesuai rumus efek Doppler?
+        </p>
+        <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 flex flex-col items-center gap-2 text-center">
+          <Database className="h-8 w-8 text-muted-foreground/60" />
+          <p className="text-xs text-muted-foreground">Belum ada data.</p>
+          <p className="text-xs text-muted-foreground">
+            Kembali ke <b>Pengumpulan Data</b>, catat beberapa baris dan isi kolom f' hitung terlebih dahulu.
+          </p>
         </div>
-        <table className="w-full">
-          <thead className="bg-muted">
-            <tr className="text-left">
-              <th className="p-2 font-semibold">No</th>
-              <th className="p-2 font-semibold">vₛ</th>
-              <th className="p-2 font-semibold">vₚ</th>
-              <th className="p-2 font-semibold">fs</th>
-              <th className="p-2 font-semibold">fp</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((vs, i) => (
-              <tr key={i} className="border-t border-border">
-                <td className="p-2">{i + 1}</td>
-                <td className="p-2 font-bold">{vs}</td>
-                <td className="p-2">0</td>
-                <td className="p-2">500</td>
-                <td className="p-2">
-                  <input className="w-16 rounded border border-border px-1 py-0.5" placeholder="hitung..." />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <button
+          disabled
+          className="w-full mt-3 rounded-lg bg-muted text-muted-foreground py-2 text-sm font-medium"
+        >
+          Cek Jawaban (0/0 f' terisi)
+        </button>
       </div>
-      <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-900">
-        <b>📈 Interpretasi Grafik:</b> Kurva non-linear naik — semakin besar vₛ, semakin tinggi f'. Penyebut (v − vₛ)
-        mengecil drastis mendekati vₛ = 343 m/s.
+
+      <div className="rounded-xl border border-border bg-card p-3">
+        <p className="text-sm font-medium">Deskripsikan apa yang ditunjukkan data:</p>
+        <textarea
+          placeholder="Analisis datamu. Ketika sumber mendekati pengamat, nilai f' yang saya hitung... Dibandingkan f₀, nilai f' saat mendekati... dan saat menjauh..."
+          className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
       </div>
-      <div className="space-y-2">
-        <p className="text-sm font-semibold">Identifikasi Hubungan vₛ dan f':</p>
-        {[
-          ["📈", "Berbanding Lurus", "vₛ naik → f' naik (sumber mendekati)"],
-          ["📉", "Berbanding Terbalik", "vₛ naik → f' turun (sumber menjauh)"],
-          ["—", "Tidak Ada Hubungan", "vₛ tidak memengaruhi f'"],
-        ].map(([e, t, d]) => (
-          <button key={t} className="w-full rounded-xl border border-border bg-card p-2.5 text-left flex gap-2">
-            <span>{e}</span>
-            <div>
-              <p className="text-sm font-semibold">{t}</p>
-              <p className="text-xs text-foreground/70">{d}</p>
-            </div>
-          </button>
-        ))}
+
+      <div className="rounded-xl border border-border bg-card p-3">
+        <p className="text-sm font-medium">Evaluasi hipotesismu:</p>
+        <p className="text-xs text-foreground/75 mt-1">
+          Apakah hipotesismu didukung oleh data? Jelaskan mengapa atau mengapa tidak, menggunakan bukti spesifik dari analisismu.
+        </p>
+        <textarea
+          placeholder="Hipotesisku menyatakan bahwa... Hasil perhitungan menunjukkan..."
+          className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
       </div>
     </div>
   );
@@ -461,14 +414,6 @@ export const ConclusionLKPD = () => (
         placeholder="Prinsip Efek Doppler yang kupelajari dapat menjelaskan..."
         className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-20 outline-none"
       />
-    </div>
-    <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs">
-      <p className="font-semibold flex items-center gap-2 text-emerald-800">
-        <FileSpreadsheet className="h-4 w-4" /> Buku Ajar & Modul Latihan Soal:
-      </p>
-      <p className="mt-1">📚 <b>Buku Ajar:</b> Materi Efek Doppler dipelajari secara terstruktur</p>
-      <p>📋 <b>Modul:</b> Panduan inkuiri mandiri setiap tahap terpenuhi</p>
-      <p>✏️ <b>Latihan Soal:</b> Hitung f' dengan berbagai nilai vₛ dan f₀</p>
     </div>
   </div>
 );
