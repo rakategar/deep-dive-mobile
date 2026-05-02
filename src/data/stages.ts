@@ -118,8 +118,8 @@ export const stages: Stage[] = [
     slug: "penarikan-kesimpulan",
     title: "Conclusion Drawing",
     titleId: "Penarikan Kesimpulan",
-    blurbId: "Sintesis temuan dan hubungkan dengan aplikasi dunia nyata",
-    thinking: "Eksplanasi",
+    blurbId: "Membuat kesimpulan dari semua tahapan yang telah dilakukan",
+    thinking: "Explanation",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menjelaskan temuanmu dengan menyatakan kesimpulan secara jelas dan membenarkannya dengan bukti.",
     Icon: CheckCircle2,
