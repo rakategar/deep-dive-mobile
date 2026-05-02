@@ -11,6 +11,15 @@ import {
 } from "@/components/stage/MateriBlocksIntensitas";
 import { lkpdContentIntensitas } from "@/components/stage/LkpdBlocksIntensitas";
 
+const renderBold = (text: string) =>
+  text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <b key={i}>{part.slice(2, -2)}</b>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+
 const StageIntensitas = () => {
   const { slug } = useParams();
   const stage = getIntensitasStageBySlug(slug);
@@ -47,7 +56,7 @@ const StageIntensitas = () => {
           <p className="font-semibold text-foreground text-sm">
             🎯 Fokus Berpikir Kritis: {stage.thinking}
           </p>
-          <p className="text-xs text-foreground/75 mt-1.5 leading-relaxed">{stage.thinkingDetailId}</p>
+          <p className="text-xs text-foreground/75 mt-1.5 leading-relaxed">{renderBold(stage.thinkingDetailId)}</p>
         </div>
 
         {/* Reflection inserts (stage 1 & 2) */}
@@ -77,28 +86,6 @@ const StageIntensitas = () => {
               </ContentAccordion>
             );
           })}
-
-          {/* Video YouTube khusus tahap Orientasi — Mengenal Intensitas Bunyi */}
-          {stage.slug === "orientasi" && (
-            <div className="rounded-2xl bg-card border border-primary/15 p-3 shadow-card">
-              <p className="text-xs font-bold tracking-wider text-info">VIDEO PENGANTAR</p>
-              <p className="font-semibold text-foreground text-sm mt-0.5">
-                Mengenal Intensitas Bunyi
-              </p>
-              <div className="mt-3 relative w-full overflow-hidden rounded-xl bg-black" style={{ paddingTop: "177.78%" }}>
-                <iframe
-                  src="https://www.youtube.com/embed/BSS-znCnkSU"
-                  title="Video Mengenal Intensitas Bunyi"
-                  className="absolute inset-0 w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
-                Tonton video singkat ini untuk mengenal fenomena intensitas bunyi di kehidupan nyata.
-              </p>
-            </div>
-          )}
 
           {/* LKPD */}
           <ContentAccordion

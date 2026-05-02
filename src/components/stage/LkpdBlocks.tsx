@@ -345,23 +345,25 @@ export const SimulatorLKPD = () => {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => setDirection("approach")}
-          className={`rounded-xl border p-2 text-sm transition-colors ${
+          className={`rounded-xl border p-2 text-sm transition-colors flex flex-col items-center gap-1 ${
             direction === "approach"
               ? "border-emerald-400 bg-emerald-50 text-emerald-700"
               : "border-border bg-card text-foreground/70"
           }`}
         >
-          🚗 → 👂 Mendekati
+          <span className="text-base">🚗 → 👂</span>
+          <span>Mendekati</span>
         </button>
         <button
           onClick={() => setDirection("leave")}
-          className={`rounded-xl border p-2 text-sm transition-colors ${
+          className={`rounded-xl border p-2 text-sm transition-colors flex flex-col items-center gap-1 ${
             direction === "leave"
               ? "border-emerald-400 bg-emerald-50 text-emerald-700"
               : "border-border bg-card text-foreground/70"
           }`}
         >
-          👂 ← 🚗 Menjauh
+          <span className="text-base">👂 ← 🚗</span>
+          <span>Menjauh</span>
         </button>
       </div>
 
@@ -442,7 +444,7 @@ export const SimulatorLKPD = () => {
               <tbody>
                 {entries.map((e, i) => (
                   <tr key={`${e.no}-${i}`} className="border-t border-border animate-fade-in">
-                    <td className="p-2">{e.no}</td>
+                    <td className="p-2">{i + 1}</td>
                     <td className="p-2">
                       <span
                         className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
@@ -615,7 +617,7 @@ export const DataTableLKPD = () => {
                           : ""
                       }`}
                     >
-                      <td className="p-2">{e.no}</td>
+                      <td className="p-2">{i + 1}</td>
                       <td className="p-2">{e.fs}</td>
                       <td className="p-2">{e.vs}</td>
                       <td className="p-2">

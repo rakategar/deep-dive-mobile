@@ -19,8 +19,14 @@ export const DopplerIntro = () => (
         <p>• Perubahan ini hanya dirasakan <b>pengamat</b>; frekuensi sumber sesungguhnya tidak berubah!</p>
       </div>
     </div>
-    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-stage-2/90 to-stage-1/80 aspect-video flex items-center justify-center">
-      <p className="font-display text-3xl text-white italic">Doppler Effect</p>
+    <div className="rounded-2xl overflow-hidden bg-black relative w-full" style={{ paddingTop: "177.78%" }}>
+      <iframe
+        src="https://www.youtube.com/embed/3XbipIKGNv4"
+        title="Video Efek Doppler"
+        className="absolute inset-0 w-full h-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
     </div>
     <p className="text-xs text-muted-foreground italic">
       Efek Doppler ditemukan oleh fisikawan Austria <b>Christian Doppler</b> pada tahun 1842 dan kini digunakan di
@@ -42,9 +48,8 @@ export const Variables = () => (
       <div key={v.sym} className="rounded-2xl bg-surface-soft-blue p-3 flex gap-3">
         <span className="font-display italic text-2xl text-info w-8 text-center">{v.sym}</span>
         <div className="flex-1">
-          <p className="font-semibold text-foreground text-sm">
-            {v.name} <span className="text-info text-xs ml-1">Satuan: {v.unit}</span>
-          </p>
+          <p className="font-semibold text-foreground text-sm">{v.name}</p>
+          <p className="text-info text-xs mt-0.5">Satuan: {v.unit}</p>
           <p className="text-xs text-foreground/70 mt-0.5 leading-snug">{v.desc}</p>
         </div>
       </div>

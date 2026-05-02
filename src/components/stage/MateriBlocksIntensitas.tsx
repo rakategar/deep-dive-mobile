@@ -40,11 +40,14 @@ export const IntensitasIntro = () => (
         sebabnya suara petasan dari dekat terasa jauh lebih keras dibanding dari kejauhan.
       </p>
     </div>
-    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-stage-2/90 to-stage-1/80 aspect-video flex items-center justify-center relative">
-      <Play className="h-12 w-12 text-white/90" />
-      <p className="absolute bottom-3 left-3 text-xs text-white/90 font-medium">
-        Video: Intensitas bunyi dalam kehidupan
-      </p>
+    <div className="rounded-2xl overflow-hidden bg-black relative w-full" style={{ paddingTop: "177.78%" }}>
+      <iframe
+        src="https://www.youtube.com/embed/BSS-znCnkSU"
+        title="Video Mengenal Intensitas Bunyi"
+        className="absolute inset-0 w-full h-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
     </div>
   </div>
 );

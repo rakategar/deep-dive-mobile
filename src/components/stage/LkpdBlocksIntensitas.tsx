@@ -33,17 +33,8 @@ export const IntensitasObservationLKPD = () => (
     <p className="text-sm font-medium text-foreground">Fenomena intensitas bunyi yang diamati:</p>
     <div className="rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-1">
       <Volume2 className="h-6 w-6 text-foreground/70" />
-      <span className="text-sm font-semibold">Sound 1 (Keras)</span>
+      <span className="text-sm font-semibold">Sound Horeg (Keras)</span>
       <span className="text-xs text-muted-foreground">~110–120 dB</span>
-    </div>
-    <p className="text-sm font-medium text-foreground mt-3">
-      Catat hasil observasimu tentang intensitas bunyi:
-    </p>
-    <div className="rounded-xl border border-border bg-card p-3 text-xs text-foreground/75 space-y-1.5">
-      <p>Apa yang kamu perhatikan? Pertimbangkan:</p>
-      <p>• Seberapa keras bunyi terdengar?</p>
-      <p>• Apakah berubah jika kamu menjauh dari sumber?</p>
-      <p>• Sumber bunyi mana yang paling intens?</p>
     </div>
     <textarea
       placeholder="Tuliskan observasimu di sini... contoh: Saat aku berdiri 1 meter dari speaker, bunyi terasa sangat menyakitkan; saat aku menjauh 4 meter, intensitasnya turun drastis..."
@@ -62,14 +53,6 @@ export const IntensitasObservationLKPD = () => (
 /* ====================== Tahap 2: Rumuskan Pertanyaan ====================== */
 export const IntensitasFormulateQuestionLKPD = () => (
   <div className="space-y-3">
-    <div className="rounded-xl bg-card border border-border p-3">
-      <p className="text-sm font-semibold flex items-center gap-2">
-        <MessageCircle className="h-4 w-4 text-lkpd" /> Mulai Perumusan Pertanyaan
-      </p>
-      <p className="text-xs text-foreground/70 mt-1">
-        Tuliskan pertanyaan penelitianmu di kolom di bawah.
-      </p>
-    </div>
     <p className="text-sm font-medium text-foreground">
       Tuliskan rumusan pertanyaan penelitianmu tentang intensitas bunyi:
     </p>
@@ -587,7 +570,7 @@ export const IntensitasSimulatorLKPD = () => {
               <tbody>
                 {entries.map((e, i) => (
                   <tr key={`${e.no}-${i}`} className="border-t border-border">
-                    <td className="p-2">{e.no}</td>
+                    <td className="p-2">{i + 1}</td>
                     <td className="p-2">{e.P}</td>
                     <td className="p-2">{e.r}</td>
                     <td className="p-2 font-semibold">{formatI(e.I)}</td>
@@ -760,7 +743,7 @@ export const IntensitasDataAnalysisLKPD = () => {
                           : ""
                       }`}
                     >
-                      <td className="p-2">{e.no}</td>
+                      <td className="p-2">{i + 1}</td>
                       <td className="p-2">{e.P}</td>
                       <td className="p-2">{e.r}</td>
                       <td className="p-2 font-mono">
