@@ -415,14 +415,6 @@ export const ConclusionLKPD = () => (
         className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-20 outline-none"
       />
     </div>
-    <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs">
-      <p className="font-semibold flex items-center gap-2 text-emerald-800">
-        <FileSpreadsheet className="h-4 w-4" /> Buku Ajar & Modul Latihan Soal:
-      </p>
-      <p className="mt-1">📚 <b>Buku Ajar:</b> Materi Efek Doppler dipelajari secara terstruktur</p>
-      <p>📋 <b>Modul:</b> Panduan inkuiri mandiri setiap tahap terpenuhi</p>
-      <p>✏️ <b>Latihan Soal:</b> Hitung f' dengan berbagai nilai vₛ dan f₀</p>
-    </div>
   </div>
 );
 
