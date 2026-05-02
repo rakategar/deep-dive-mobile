@@ -25,7 +25,7 @@ export const stages: Stage[] = [
     slug: "orientasi",
     title: "Orientation",
     titleId: "Orientasi",
-    blurbId: "Jelajahi fenomena gelombang bunyi nyata dan observasi awal",
+    blurbId: "Observasi fenomena gelombang bunyi dalam kehidupan sehari-hari",
     thinking: "Interpretation",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menginterpretasikan fenomena bunyi nyata dengan memahami informasi visual dan kontekstual, mengidentifikasi konsep kunci, serta mengungkapkan pemahamanmu terhadap apa yang diamati.",
