@@ -20,9 +20,14 @@ const Splash = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-primary text-primary-foreground">
         <button
           onClick={() => navigate(isSignedIn ? "/home" : "/welcome", { replace: true })}
-          className="font-display text-6xl italic tracking-tight underline underline-offset-[10px] decoration-[1.5px]"
+          className="flex flex-col items-center"
         >
-          indeep
+          <span className="font-display text-6xl italic tracking-tight underline underline-offset-[10px] decoration-[1.5px]">
+            indeep
+          </span>
+          <span className="mt-2 text-sm italic text-primary-foreground/90 tracking-wide">
+            Inquiry Deep Learning
+          </span>
         </button>
       </div>
     </MobileShell>
