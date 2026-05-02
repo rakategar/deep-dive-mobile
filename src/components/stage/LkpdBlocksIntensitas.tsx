@@ -41,20 +41,11 @@ export const IntensitasFormulateQuestionLKPD = () => (
   <div className="space-y-3">
     <div className="rounded-xl bg-card border border-border p-3">
       <p className="text-sm font-semibold flex items-center gap-2">
-        <MessageCircle className="h-4 w-4 text-lkpd" /> Pemandu Pertanyaan:
+        <MessageCircle className="h-4 w-4 text-lkpd" /> Mulai Perumusan Pertanyaan
       </p>
-      <div className="flex flex-wrap gap-2 mt-2">
-        {[
-          "Faktor apa yang mempengaruhi I...",
-          "Mengapa TI berubah saat...",
-          "Apa hubungan jarak dengan...",
-          "Bagaimana daya P mempengaruhi...",
-        ].map((c) => (
-          <span key={c} className="text-xs px-3 py-1 rounded-full bg-surface-soft-purple text-lkpd">
-            {c}
-          </span>
-        ))}
-      </div>
+      <p className="text-xs text-foreground/70 mt-1">
+        Tuliskan pertanyaan penelitianmu di kolom di bawah.
+      </p>
     </div>
     <p className="text-sm font-medium text-foreground">
       Tuliskan rumusan pertanyaan penelitianmu tentang intensitas bunyi:
