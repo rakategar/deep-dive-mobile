@@ -22,7 +22,7 @@ const Splash = () => {
           onClick={() => navigate(isSignedIn ? "/home" : "/welcome", { replace: true })}
           className="flex flex-col items-center"
         >
-          <span className="font-display text-6xl italic tracking-tight underline underline-offset-[10px] decoration-[1.5px]">
+          <span className="font-display text-6xl tracking-tight underline underline-offset-[10px] decoration-[1.5px]">
             indeep
           </span>
           <span className="mt-2 text-sm italic text-primary-foreground/90 tracking-wide">
