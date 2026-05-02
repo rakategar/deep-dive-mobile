@@ -146,17 +146,37 @@ export const SimulatorLKPD = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [entries, setEntries] = useState<DopplerEntry[]>([]);
   const [recording, setRecording] = useState(false);
+  const [loadingEntries, setLoadingEntries] = useState(false);
   const canvasRef = useRef<DopplerWaveCanvasHandle>(null);
+  const debounceTimers = useRef<Record<number, number>>({});
   const navigate = useNavigate();
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
 
-  const v = 343;
   const safeVs = Math.min(vs, 300);
-  const denom = direction === "approach" ? v - safeVs : v + safeVs;
-  const fp = ((fs * v) / denom).toFixed(1);
-
   const fsPercent = ((fs - 100) / 900) * 100;
+
+  // Load existing rows from spreadsheet on mount / when user becomes signed in
+  useEffect(() => {
+    if (!isSignedIn) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingEntries(true);
+      try {
+        const token = await getToken();
+        const rows = await fetchUserDopplerRows(token);
+        if (!cancelled) setEntries(rows);
+      } catch (err) {
+        console.error("load doppler rows error", err);
+      } finally {
+        if (!cancelled) setLoadingEntries(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      Object.values(debounceTimers.current).forEach((t) => window.clearTimeout(t));
+    };
+  }, [isSignedIn, getToken]);
 
   const handleRecord = async () => {
     if (!isSignedIn || !user) {
@@ -184,18 +204,28 @@ export const SimulatorLKPD = () => {
             mode: direction === "approach" ? "Mendekati" : "Menjauh",
             fs,
             vs: safeVs,
-            fp: Number(fp),
           }),
         },
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Gagal mencatat data");
+      if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal mencatat data");
 
       setEntries((prev) => [
         ...prev,
-        { no: data.no ?? prev.length + 1, mode: direction, fs, vs: safeVs, fp },
+        {
+          no: data.no ?? prev.length + 1,
+          rowNumber: data.rowNumber,
+          mode: direction,
+          fs,
+          vs: safeVs,
+          fp: "",
+          saveStatus: "idle",
+        },
       ]);
-      toast({ title: "Data berhasil dicatat", description: `f' = ${fp} Hz pada vₛ = ${safeVs} m/s` });
+      toast({
+        title: "Data berhasil dicatat",
+        description: `Hitung sendiri f' lalu isi di kolom f'.`,
+      });
     } catch (err: any) {
       console.error("catat-data error", err);
       toast({
@@ -208,6 +238,47 @@ export const SimulatorLKPD = () => {
     }
   };
 
+  const updateFpOnServer = async (index: number, value: string) => {
+    const entry = entries[index];
+    if (!entry?.rowNumber) return;
+    setEntries((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, saveStatus: "saving" } : e)),
+    );
+    try {
+      const token = await getToken();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/update-doppler-fp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ rowNumber: entry.rowNumber, fp: value }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal menyimpan");
+      setEntries((prev) =>
+        prev.map((e, i) => (i === index ? { ...e, saveStatus: "saved" } : e)),
+      );
+    } catch (err) {
+      console.error("doppler fp update error", err);
+      setEntries((prev) =>
+        prev.map((e, i) => (i === index ? { ...e, saveStatus: "error" } : e)),
+      );
+    }
+  };
+
+  const handleFpChange = (index: number, value: string) => {
+    setEntries((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, fp: value, saveStatus: "idle" } : e)),
+    );
+    const timers = debounceTimers.current;
+    if (timers[index]) window.clearTimeout(timers[index]);
+    timers[index] = window.setTimeout(() => updateFpOnServer(index, value), 700);
+  };
 
   const handleClear = () => setEntries([]);
   const handleReset = () => canvasRef.current?.reset();
@@ -300,7 +371,6 @@ export const SimulatorLKPD = () => {
         </div>
       </div>
 
-
       <button
         onClick={handleRecord}
         disabled={recording}
@@ -316,17 +386,20 @@ export const SimulatorLKPD = () => {
             <button
               onClick={handleClear}
               className="text-xs text-rose-600 flex items-center gap-1 hover:underline"
+              title="Hanya menghapus tampilan lokal — data di spreadsheet tetap tersimpan."
             >
-              <Trash2 className="h-3 w-3" /> Hapus Data
+              <Trash2 className="h-3 w-3" /> Hapus Tampilan
             </button>
           )}
         </div>
-        {entries.length === 0 ? (
+        {loadingEntries && entries.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center mt-3">Memuat data...</p>
+        ) : entries.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center mt-3">
             Belum ada data. Atur parameter lalu tekan "Catat Data".
           </p>
         ) : (
-          <div className="mt-2 overflow-hidden rounded-lg border border-border">
+          <div className="mt-2 overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-xs">
               <thead className="bg-muted">
                 <tr className="text-left">
@@ -334,12 +407,12 @@ export const SimulatorLKPD = () => {
                   <th className="p-2 font-semibold">Mode</th>
                   <th className="p-2 font-semibold">f₀</th>
                   <th className="p-2 font-semibold">vₛ</th>
-                  <th className="p-2 font-semibold">f'</th>
+                  <th className="p-2 font-semibold bg-amber-50">f' (Hz) ✏️</th>
                 </tr>
               </thead>
               <tbody>
-                {entries.map((e) => (
-                  <tr key={e.no} className="border-t border-border animate-fade-in">
+                {entries.map((e, i) => (
+                  <tr key={`${e.no}-${i}`} className="border-t border-border animate-fade-in">
                     <td className="p-2">{e.no}</td>
                     <td className="p-2">
                       <span
@@ -354,13 +427,33 @@ export const SimulatorLKPD = () => {
                     </td>
                     <td className="p-2">{e.fs}</td>
                     <td className="p-2 font-bold">{e.vs}</td>
-                    <td className="p-2 font-bold text-lkpd">{e.fp}</td>
+                    <td className="p-2 bg-amber-50/40">
+                      <input
+                        value={e.fp}
+                        onChange={(ev) => handleFpChange(i, ev.target.value)}
+                        placeholder="hitung..."
+                        className="w-24 rounded-md border border-amber-300 bg-card px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                      {e.saveStatus === "saving" && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Menyimpan...</p>
+                      )}
+                      {e.saveStatus === "saved" && (
+                        <p className="text-[10px] text-emerald-600 mt-0.5">Tersimpan</p>
+                      )}
+                      {e.saveStatus === "error" && (
+                        <p className="text-[10px] text-rose-600 mt-0.5">Gagal menyimpan</p>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
+        <p className="text-[11px] text-foreground/70 mt-2 leading-snug">
+          💡 Hitung sendiri nilai <b>f'</b> menggunakan rumus efek Doppler. Nilai akan tersimpan otomatis ke
+          spreadsheet dan muncul di tahap Pengujian Hipotesis.
+        </p>
       </div>
 
       <div className="rounded-xl border border-lkpd/30 bg-surface-soft-purple p-3">
