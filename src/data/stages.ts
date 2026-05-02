@@ -64,8 +64,8 @@ export const stages: Stage[] = [
     slug: "perumusan-hipotesis",
     title: "Hypothesis Formulation",
     titleId: "Perumusan Hipotesis",
-    blurbId: "Kembangkan prediksi logis berdasarkan prinsip gelombang bunyi",
-    thinking: "Inferensi",
+    blurbId: "Membuat hipotesis dari rumusan masalah yang telah dibuat sebelumnya",
+    thinking: "Inference",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menggunakan inferensi untuk menarik kesimpulan logis dari pengetahuan dan observasi sebelumnya, membangun prediksi yang dapat diuji tentang perilaku gelombang bunyi.",
     Icon: Lightbulb,
