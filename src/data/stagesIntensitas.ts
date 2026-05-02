@@ -81,7 +81,7 @@ export const stagesIntensitas: Stage[] = [
     textColor: "text-stage-4",
     ctaLabel: "Lanjut ke Pengujian Hipotesis",
     next: "/intensitas/stage/pengujian-hipotesis",
-    materi: [{ title: "Variabel Intensitas Bunyi", key: "intensitas-variables" }],
+    materi: [],
     lkpdTitle: "Simulator Intensitas Bunyi",
     lkpdKey: "intensitas-simulator",
   },
