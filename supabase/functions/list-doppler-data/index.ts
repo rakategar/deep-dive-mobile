@@ -1,18 +1,10 @@
-// Append a Doppler-effect data row to a Google Sheet on behalf of an authenticated Clerk user.
-// Leaves column H (f') blank — the student fills it in manually, saved later via update-doppler-fp.
-
+// List Doppler rows belonging to the authenticated Clerk user.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
-
-interface DopplerPayload {
-  mode: "Mendekati" | "Menjauh";
-  fs: number;
-  vs: number;
-}
 
 const CLERK_SECRET_KEY = Deno.env.get("CLERK_SECRET_KEY") ?? "";
 const SHEETS_CLIENT_EMAIL = Deno.env.get("GOOGLE_SHEETS_CLIENT_EMAIL") ?? "";
@@ -52,7 +44,7 @@ async function getGoogleAccessToken(): Promise<string> {
   const header = { alg: "RS256", typ: "JWT" };
   const claims = {
     iss: SHEETS_CLIENT_EMAIL,
-    scope: "https://www.googleapis.com/auth/spreadsheets",
+    scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
     aud: "https://oauth2.googleapis.com/token",
     iat: now,
     exp: now + 3600,
@@ -100,7 +92,6 @@ async function verifyClerkUser(authHeader: string | null) {
     return null;
   }
   if (!sub) return null;
-
   const userRes = await fetch(`https://api.clerk.com/v1/users/${sub}`, {
     headers: { Authorization: `Bearer ${CLERK_SECRET_KEY}` },
   });
@@ -108,23 +99,8 @@ async function verifyClerkUser(authHeader: string | null) {
   return await userRes.json();
 }
 
-function deriveIdentity(user: any) {
-  const email: string =
-    user?.email_addresses?.find((e: any) => e.id === user?.primary_email_address_id)?.email_address ??
-    user?.email_addresses?.[0]?.email_address ??
-    "";
-  const username: string =
-    user?.username ?? (email ? email.split("@")[0] : "") ?? "";
-  const fullName =
-    [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim() ||
-    username ||
-    email;
-  return { userId: user?.id ?? "", username, fullName, email };
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
   try {
     if (!CLERK_SECRET_KEY) return json(500, { error: "CLERK_SECRET_KEY not configured" });
@@ -135,19 +111,9 @@ Deno.serve(async (req) => {
     const user = await verifyClerkUser(req.headers.get("Authorization"));
     if (!user) return json(401, { error: "Unauthorized" });
 
-    const body = (await req.json()) as DopplerPayload;
-    if (!body || (body.mode !== "Mendekati" && body.mode !== "Menjauh")) {
-      return json(400, { error: "Invalid mode" });
-    }
-    if (typeof body.fs !== "number" || typeof body.vs !== "number") {
-      return json(400, { error: "fs, vs must be numbers" });
-    }
-
     const accessToken = await getGoogleAccessToken();
     const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_SPREADSHEET_ID}`;
-
-    // Count existing data rows starting at row 7 to compute next rowNumber + No.
-    const readUrl = `${baseUrl}/values/${SHEET_TAB}!A7:A`;
+    const readUrl = `${baseUrl}/values/${SHEET_TAB}!A7:I?valueRenderOption=UNFORMATTED_VALUE`;
     const readRes = await fetch(readUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -156,44 +122,23 @@ Deno.serve(async (req) => {
       console.error("Sheets read error", readData);
       return json(502, { error: "Failed to read sheet", detail: readData });
     }
-    const existing = (readData.values ?? []) as string[][];
-    const nextNo = existing.filter((r) => r[0] && String(r[0]).trim() !== "").length + 1;
-    const rowNumber = 6 + nextNo; // header rows 1-6, data starts row 7
 
-    const id = deriveIdentity(user);
-    const row = [
-      nextNo,
-      id.userId,
-      id.username,
-      id.fullName,
-      body.mode,
-      body.fs,
-      body.vs,
-      "", // f' — left blank, filled by student
-      "",
-    ];
+    const all = (readData.values ?? []) as any[][];
+    const rows = all
+      .map((r, idx) => ({ r, rowNumber: 7 + idx }))
+      .filter(({ r }) => r && r[1] === user.id)
+      .map(({ r, rowNumber }) => ({
+        no: Number(r[0]) || 0,
+        rowNumber,
+        mode: (r[4] === "Mendekati" ? "approach" : "leave") as "approach" | "leave",
+        fs: Number(r[5]) || 0,
+        vs: Number(r[6]) || 0,
+        fp: r[7] === undefined || r[7] === null ? "" : String(r[7]),
+      }));
 
-    // Write directly to the computed row so we know rowNumber for later updates.
-    const writeUrl =
-      `${baseUrl}/values/${SHEET_TAB}!A${rowNumber}:I${rowNumber}` +
-      `?valueInputOption=USER_ENTERED`;
-    const writeRes = await fetch(writeUrl, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ values: [row] }),
-    });
-    const writeData = await writeRes.json();
-    if (!writeRes.ok) {
-      console.error("Sheets write error", writeData);
-      return json(502, { error: "Failed to write row", detail: writeData });
-    }
-
-    return json(200, { success: true, no: nextNo, rowNumber, identity: id });
+    return json(200, { success: true, rows });
   } catch (err) {
-    console.error("append-doppler-data error", err);
+    console.error("list-doppler-data error", err);
     return json(500, { error: (err as Error).message });
   }
 });
