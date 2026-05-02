@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { UserButton } from "@clerk/clerk-react";
 import { Brain, Waves } from "lucide-react";
 import { MobileShell } from "@/components/layout/MobileShell";
-import buddyTeacher from "@/assets/buddy-teacher.png";
+import buddyTeacher from "@/assets/buddy-home.png";
 
 const Home = () => {
   const navigate = useNavigate();
