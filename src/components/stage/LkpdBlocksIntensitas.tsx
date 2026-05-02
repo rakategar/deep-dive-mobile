@@ -142,23 +142,143 @@ const I0 = 1e-12; // ambang pendengaran W/m²
 const formatI = (I: number) =>
   I >= 1e-4 ? I.toFixed(4) : I.toExponential(2);
 
-/* ---- Visualisasi Penyebaran Energi (SVG) ---- */
+/* ---- Visualisasi Penyebaran Energi (Canvas — gelombang merambat) ---- */
 const EnergyVisualization = ({ P, r }: { P: number; r: number }) => {
-  // Map r (1..100m) into svg x position (40..360)
-  const svgW = 400;
-  const svgH = 180;
-  const sourceX = 40;
-  const sourceY = svgH / 2;
-  const observerX = sourceX + (Math.min(r, 100) / 100) * (svgW - 80);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const stateRef = useRef({ P, r });
+  stateRef.current = { P, r };
 
-  // Concentric "energy" rings — opacity decays with distance & grows with P
-  const rings = [1, 2, 3, 4, 5, 6];
-  const powerBoost = Math.min(1, P / 1000); // 0..1
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let rafId = 0;
+    let dpr = window.devicePixelRatio || 1;
+
+    const resize = () => {
+      const rect = container.getBoundingClientRect();
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(container);
+
+    type Wave = { born: number };
+    const waves: Wave[] = [];
+    let lastSpawn = 0;
+    const start = performance.now();
+
+    const draw = (now: number) => {
+      const w = canvas.width;
+      const h = canvas.height;
+      const { P: Pv, r: rv } = stateRef.current;
+      const power = Math.min(1, Pv / 1000); // 0..1
+
+      // Spawn new wave — speed scales mildly with power
+      const spawnInterval = 700 - power * 250; // ms
+      if (now - lastSpawn > spawnInterval) {
+        waves.push({ born: now });
+        lastSpawn = now;
+      }
+
+      const sourceX = w * 0.12;
+      const sourceY = h * 0.5;
+      const maxR = Math.hypot(Math.max(w - sourceX, sourceX), h);
+      const observerX = sourceX + (Math.min(rv, 100) / 100) * (w - sourceX - 24 * dpr);
+
+      // Clear
+      ctx.clearRect(0, 0, w, h);
+
+      // Waves
+      const speed = (0.06 + power * 0.05) * dpr; // px per ms
+      for (let i = waves.length - 1; i >= 0; i--) {
+        const age = now - waves[i].born;
+        const radius = age * speed;
+        if (radius > maxR) {
+          waves.splice(i, 1);
+          continue;
+        }
+        const lifeT = radius / maxR; // 0..1
+        const opacity = (1 - lifeT) * (0.35 + power * 0.55);
+        // Color shift: warm near source, cool further
+        let stroke: string;
+        if (lifeT < 0.33) stroke = `hsla(0, 85%, 58%, ${opacity})`;
+        else if (lifeT < 0.66) stroke = `hsla(28, 92%, 58%, ${opacity})`;
+        else stroke = `hsla(220, 80%, 60%, ${opacity})`;
+
+        ctx.beginPath();
+        ctx.lineWidth = 1.6 * dpr;
+        ctx.strokeStyle = stroke;
+        ctx.arc(sourceX, sourceY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Distance line (source → observer)
+      ctx.setLineDash([5 * dpr, 5 * dpr]);
+      ctx.lineWidth = 1.2 * dpr;
+      ctx.strokeStyle = "hsla(270, 60%, 55%, 0.7)";
+      ctx.beginPath();
+      ctx.moveTo(sourceX, sourceY);
+      ctx.lineTo(observerX, sourceY);
+      ctx.stroke();
+
+      // Vertical guide at observer
+      ctx.beginPath();
+      ctx.strokeStyle = "hsla(270, 60%, 55%, 0.45)";
+      ctx.moveTo(observerX, h * 0.12);
+      ctx.lineTo(observerX, h * 0.88);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Observer label
+      ctx.fillStyle = "hsl(270, 60%, 38%)";
+      ctx.font = `${11 * dpr}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(`P (${rv}m)`, observerX, h * 0.1);
+
+      // Source dot (orange/yellow)
+      ctx.beginPath();
+      ctx.fillStyle = "hsl(35, 95%, 55%)";
+      ctx.arc(sourceX, sourceY, 9 * dpr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.fillStyle = "white";
+      ctx.arc(sourceX, sourceY, 4 * dpr, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Source label
+      ctx.fillStyle = "hsla(222, 20%, 14%, 0.6)";
+      ctx.font = `${10 * dpr}px Inter, system-ui, sans-serif`;
+      ctx.fillText("Sumber", sourceX, h - 6 * dpr);
+
+      // Observer dot (brown/orange)
+      ctx.beginPath();
+      ctx.fillStyle = "hsl(15, 70%, 35%)";
+      ctx.arc(observerX, sourceY, 7 * dpr, 0, Math.PI * 2);
+      ctx.fill();
+
+      rafId = requestAnimationFrame(draw);
+    };
+    rafId = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
+  }, []);
 
   return (
-    <div className="relative rounded-2xl border border-primary/20 bg-gradient-to-br from-rose-50 via-white to-indigo-50 overflow-hidden">
+    <div className="relative rounded-2xl border border-primary/20 overflow-hidden bg-gradient-to-r from-orange-100 via-rose-50 to-indigo-100">
       {/* Header / legend */}
-      <div className="flex items-center justify-between px-3 pt-3 text-xs">
+      <div className="relative z-10 flex items-center justify-between px-3 pt-3 text-xs">
         <span className="font-semibold text-foreground">Visualisasi Penyebaran Energi</span>
         <div className="flex items-center gap-2 text-[11px]">
           <span className="flex items-center gap-1">
@@ -170,100 +290,9 @@ const EnergyVisualization = ({ P, r }: { P: number; r: number }) => {
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-44">
-        <defs>
-          <radialGradient id="energyGrad" cx="0" cy="0.5" r="1">
-            <stop offset="0%" stopColor="hsl(0 85% 60%)" stopOpacity="0.55" />
-            <stop offset="40%" stopColor="hsl(28 90% 60%)" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="hsl(220 80% 60%)" stopOpacity="0.05" />
-          </radialGradient>
-        </defs>
-
-        {/* Energy field */}
-        <rect
-          x={sourceX - 10}
-          y={0}
-          width={svgW - sourceX + 10}
-          height={svgH}
-          fill="url(#energyGrad)"
-          opacity={0.7 + 0.3 * powerBoost}
-        />
-
-        {/* Concentric rings */}
-        {rings.map((i) => {
-          const radius = i * 28;
-          const op = Math.max(0.05, (0.45 - i * 0.06) * (0.5 + powerBoost));
-          return (
-            <circle
-              key={i}
-              cx={sourceX}
-              cy={sourceY}
-              r={radius}
-              fill="none"
-              stroke={i <= 2 ? "hsl(0 85% 60%)" : i <= 4 ? "hsl(28 90% 60%)" : "hsl(220 80% 60%)"}
-              strokeWidth={1.4}
-              opacity={op}
-            >
-              <animate
-                attributeName="r"
-                from={radius}
-                to={radius + 8}
-                dur={`${2 + i * 0.3}s`}
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="opacity"
-                values={`${op};${op * 0.3};${op}`}
-                dur={`${2 + i * 0.3}s`}
-                repeatCount="indefinite"
-              />
-            </circle>
-          );
-        })}
-
-        {/* Distance line */}
-        <line
-          x1={sourceX}
-          y1={sourceY}
-          x2={observerX}
-          y2={sourceY}
-          stroke="hsl(270 60% 55%)"
-          strokeWidth={1.2}
-          strokeDasharray="4 4"
-          opacity={0.7}
-        />
-        {/* Vertical guide at observer */}
-        <line
-          x1={observerX}
-          y1={20}
-          x2={observerX}
-          y2={svgH - 20}
-          stroke="hsl(270 60% 55%)"
-          strokeWidth={1}
-          strokeDasharray="3 3"
-          opacity={0.5}
-        />
-        <text
-          x={observerX}
-          y={16}
-          textAnchor="middle"
-          className="fill-violet-700"
-          fontSize="11"
-          fontWeight="600"
-        >
-          P ({r}m)
-        </text>
-
-        {/* Source */}
-        <circle cx={sourceX} cy={sourceY} r={9} fill="hsl(35 95% 55%)" />
-        <circle cx={sourceX} cy={sourceY} r={4} fill="white" />
-        <text x={sourceX} y={svgH - 8} textAnchor="middle" fontSize="10" className="fill-foreground/60">
-          Sumber
-        </text>
-
-        {/* Observer */}
-        <circle cx={observerX} cy={sourceY} r={7} fill="hsl(15 70% 35%)" />
-      </svg>
+      <div ref={containerRef} className="relative h-44 w-full">
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+      </div>
     </div>
   );
 };
