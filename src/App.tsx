@@ -20,6 +20,8 @@ import Stage from "./pages/Stage";
 import StageIntensitas from "./pages/StageIntensitas";
 import BukuAjar from "./pages/BukuAjar";
 import Modul from "./pages/Modul";
+import DopplerBukuAjar from "./pages/DopplerBukuAjar";
+import DopplerModul from "./pages/DopplerModul";
 import Certificate from "./pages/Certificate";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -74,6 +76,8 @@ const AnimatedRoutes = () => {
       <Route path="/intensitas/stage/:slug" element={<RequireAuth><StageIntensitas /></RequireAuth>} />
       <Route path="/intensitas/buku-ajar" element={<RequireAuth><BukuAjar /></RequireAuth>} />
       <Route path="/intensitas/modul" element={<RequireAuth><Modul /></RequireAuth>} />
+      <Route path="/doppler/buku-ajar" element={<RequireAuth><DopplerBukuAjar /></RequireAuth>} />
+      <Route path="/doppler/modul" element={<RequireAuth><DopplerModul /></RequireAuth>} />
       <Route path="/certificate" element={<RequireAuth><Certificate /></RequireAuth>} />
       <Route path="*" element={<NotFound />} />
       </Routes>
