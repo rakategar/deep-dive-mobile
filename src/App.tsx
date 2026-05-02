@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { AuthenticateWithRedirectCallback, ClerkProvider } from "@clerk/clerk-react";
+import { PageTransition } from "@/components/layout/PageTransition";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,10 +37,12 @@ const MissingClerkKey = () => (
   </div>
 );
 
-const AppRoutes = () => (
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Splash />} />
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <PageTransition>
+      <Routes location={location}>
+        <Route path="/" element={<Splash />} />
       <Route path="/welcome" element={<PublicOnly><Welcome /></PublicOnly>} />
       <Route path="/signup" element={<PublicOnly><SignUp /></PublicOnly>} />
       <Route path="/register" element={<PublicOnly><SignUp /></PublicOnly>} />
