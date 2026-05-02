@@ -1,20 +1,29 @@
 import { Clipboard, Scale, Search, Microscope, Music, Plane, MessageSquare, AlertTriangle, Play } from "lucide-react";
 import scientist from "@/assets/avatars/scientist.png";
+import { Fraction } from "./Fraction";
 
 /* ----------------------- Reusable formula card ----------------------- */
 export const IntensitasFormula = () => (
   <div className="rounded-2xl bg-stage-2 p-4 text-white space-y-3">
     <div>
       <p className="text-[10px] tracking-widest font-semibold opacity-80">RUMUS INTENSITAS BUNYI</p>
-      <p className="font-display italic text-2xl text-center my-2">
-        I = P ⁄ A = P ⁄ 4πr²
-      </p>
+      <div className="flex items-center justify-center my-3 font-display italic text-2xl">
+        <span>I</span>
+        <span className="mx-2">=</span>
+        <Fraction num={<span>P</span>} den={<span>A</span>} />
+        <span className="mx-2">=</span>
+        <Fraction num={<span>P</span>} den={<span>4πr²</span>} />
+      </div>
     </div>
     <div className="border-t border-white/15 pt-3">
       <p className="text-[10px] tracking-widest font-semibold opacity-80">RUMUS TARAF INTENSITAS BUNYI</p>
-      <p className="font-display italic text-2xl text-center my-2">
-        TI = 10 log ( I ⁄ I₀ )
-      </p>
+      <div className="flex items-center justify-center my-3 font-display italic text-2xl">
+        <span>TI</span>
+        <span className="mx-2">= 10 log</span>
+        <span className="text-[1.4em] leading-none font-light">(</span>
+        <Fraction num={<span>I</span>} den={<span>I₀</span>} />
+        <span className="text-[1.4em] leading-none font-light">)</span>
+      </div>
     </div>
   </div>
 );
