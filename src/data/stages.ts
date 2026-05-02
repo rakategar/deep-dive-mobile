@@ -82,8 +82,8 @@ export const stages: Stage[] = [
     slug: "pengumpulan-data",
     title: "Data Collection",
     titleId: "Pengumpulan Data",
-    blurbId: "Jelajahi simulasi interaktif dan kumpulkan data eksperimental",
-    thinking: "Analisis + Evaluasi",
+    blurbId: "Mengumpulkan data dari simulasi yang dilakukan",
+    thinking: "Analysis + Evaluation",
     thinkingDetailId:
       "Pada tahap ini, kamu akan menganalisis data yang dikumpulkan dengan mengidentifikasi pola dan hubungan, lalu mengevaluasi keakuratan, relevansi, dan keandalannya untuk menguji hipotesismu.",
     Icon: Database,
