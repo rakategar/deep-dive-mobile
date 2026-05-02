@@ -725,12 +725,6 @@ export const ConclusionLKPD = () => (
         className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-28 outline-none"
       />
     </div>
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs">
-      <p className="font-semibold text-lkpd">Sertakan dalam kesimpulanmu:</p>
-      <p>• Penjelasan mekanisme Efek Doppler</p>
-      <p>• Penjelasan hasil hipotesis dan percobaanmu</p>
-      <p>• Perbedaan kondisi mendekati vs menjauh berdasarkan data</p>
-    </div>
     <div className="rounded-xl bg-card border border-border p-3">
       <p className="text-sm font-semibold flex items-center gap-2">
         <Lightbulb className="h-4 w-4 text-amber-500" /> Koneksi Aplikasi Nyata
