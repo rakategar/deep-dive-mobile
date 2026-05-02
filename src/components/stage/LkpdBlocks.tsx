@@ -345,23 +345,25 @@ export const SimulatorLKPD = () => {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => setDirection("approach")}
-          className={`rounded-xl border p-2 text-sm transition-colors ${
+          className={`rounded-xl border p-2 text-sm transition-colors flex flex-col items-center gap-1 ${
             direction === "approach"
               ? "border-emerald-400 bg-emerald-50 text-emerald-700"
               : "border-border bg-card text-foreground/70"
           }`}
         >
-          🚗 → 👂 Mendekati
+          <span className="text-base">🚗 → 👂</span>
+          <span>Mendekati</span>
         </button>
         <button
           onClick={() => setDirection("leave")}
-          className={`rounded-xl border p-2 text-sm transition-colors ${
+          className={`rounded-xl border p-2 text-sm transition-colors flex flex-col items-center gap-1 ${
             direction === "leave"
               ? "border-emerald-400 bg-emerald-50 text-emerald-700"
               : "border-border bg-card text-foreground/70"
           }`}
         >
-          👂 ← 🚗 Menjauh
+          <span className="text-base">👂 ← 🚗</span>
+          <span>Menjauh</span>
         </button>
       </div>
 
