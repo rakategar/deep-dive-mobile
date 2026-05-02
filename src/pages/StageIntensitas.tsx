@@ -78,24 +78,24 @@ const StageIntensitas = () => {
             );
           })}
 
-          {/* Video YouTube khusus tahap Pengumpulan Data */}
-          {stage.slug === "pengumpulan-data" && (
+          {/* Video YouTube khusus tahap Orientasi — Mengenal Intensitas Bunyi */}
+          {stage.slug === "orientasi" && (
             <div className="rounded-2xl bg-card border border-primary/15 p-3 shadow-card">
               <p className="text-xs font-bold tracking-wider text-info">VIDEO PENGANTAR</p>
               <p className="font-semibold text-foreground text-sm mt-0.5">
-                Pengamatan: Penyebaran Energi Bunyi
+                Mengenal Intensitas Bunyi
               </p>
               <div className="mt-3 relative w-full overflow-hidden rounded-xl bg-black" style={{ paddingTop: "177.78%" }}>
                 <iframe
                   src="https://www.youtube.com/embed/BSS-znCnkSU"
-                  title="Video Intensitas Bunyi"
+                  title="Video Mengenal Intensitas Bunyi"
                   className="absolute inset-0 w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
               </div>
               <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
-                Tonton video singkat ini sebelum memulai simulator intensitas bunyi di bawah.
+                Tonton video singkat ini untuk mengenal fenomena intensitas bunyi di kehidupan nyata.
               </p>
             </div>
           )}
