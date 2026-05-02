@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Info, Brain, BookOpen, FileText, Pencil, Waves, ChevronLeft } from "lucide-react";
+import { Info, BookOpen, FileText, Pencil, Waves, ChevronLeft, Target } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { stages } from "@/data/stages";
