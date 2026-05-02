@@ -1,8 +1,5 @@
-// Append a Doppler-effect data row to a Google Sheet on behalf of an authenticated Clerk user.
-// - Verifies the Clerk session token (passed as Bearer) via Clerk Backend API
-// - Authenticates to Google Sheets API using a service-account JWT (RS256)
-// - Calculates next "No" by reading existing rows from Database!A7:A
-// - Appends to Database!A:I with USER_ENTERED so f₀, vs, f' stay numeric
+// Append a Sound Intensity (Intensitas Bunyi) data row to the "Intensitas Bunyi" tab.
+// Returns the spreadsheet row number so the client can later update column H (TI hitung).
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,18 +8,19 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-interface DopplerPayload {
-  mode: "Mendekati" | "Menjauh";
-  fs: number;
-  vs: number;
-  fp: number; // observed frequency, will be formatted to 1 decimal
+interface IntensityPayload {
+  power: number;     // Watt
+  distance: number;  // meter
+  intensity: number; // W/m²
 }
 
 const CLERK_SECRET_KEY = Deno.env.get("CLERK_SECRET_KEY") ?? "";
 const SHEETS_CLIENT_EMAIL = Deno.env.get("GOOGLE_SHEETS_CLIENT_EMAIL") ?? "";
 const SHEETS_PRIVATE_KEY = (Deno.env.get("GOOGLE_SHEETS_PRIVATE_KEY") ?? "").replace(/\\n/g, "\n");
 const SHEETS_SPREADSHEET_ID = Deno.env.get("GOOGLE_SHEETS_SPREADSHEET_ID") ?? "";
-const SHEET_TAB = "Doppler";
+const SHEET_TAB = "Intensitas Bunyi";
+// Sheets API needs the tab name URL-encoded when it contains spaces.
+const SHEET_TAB_ENC = encodeURIComponent(SHEET_TAB);
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -94,10 +92,6 @@ async function verifyClerkUser(authHeader: string | null) {
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.slice("Bearer ".length).trim();
   if (!token) return null;
-  // Use Clerk Backend API to verify session token by introspecting via /v1/me proxy.
-  // The simplest reliable path: call Clerk's "verify token" via the JWT's `sub` after
-  // fetching the user with the session token. We use the sessions endpoint.
-  // Decode the JWT sub claim manually first (no signature trust yet).
   const parts = token.split(".");
   if (parts.length !== 3) return null;
   let sub: string | undefined;
@@ -109,16 +103,11 @@ async function verifyClerkUser(authHeader: string | null) {
   }
   if (!sub) return null;
 
-  // Now verify by fetching the user from Clerk using the SECRET KEY (server side).
-  // If the token's `sub` corresponds to a real user under our Clerk instance, we trust it.
-  // For full signature verification you would fetch JWKS; this server-to-Clerk lookup is
-  // sufficient because CLERK_SECRET_KEY is required to read the user.
   const userRes = await fetch(`https://api.clerk.com/v1/users/${sub}`, {
     headers: { Authorization: `Bearer ${CLERK_SECRET_KEY}` },
   });
   if (!userRes.ok) return null;
-  const user = await userRes.json();
-  return user;
+  return await userRes.json();
 }
 
 function deriveIdentity(user: any) {
@@ -148,19 +137,20 @@ Deno.serve(async (req) => {
     const user = await verifyClerkUser(req.headers.get("Authorization"));
     if (!user) return json(401, { error: "Unauthorized" });
 
-    const body = (await req.json()) as DopplerPayload;
-    if (!body || (body.mode !== "Mendekati" && body.mode !== "Menjauh")) {
-      return json(400, { error: "Invalid mode" });
-    }
-    if (typeof body.fs !== "number" || typeof body.vs !== "number" || typeof body.fp !== "number") {
-      return json(400, { error: "fs, vs, fp must be numbers" });
+    const body = (await req.json()) as IntensityPayload;
+    if (
+      typeof body?.power !== "number" ||
+      typeof body?.distance !== "number" ||
+      typeof body?.intensity !== "number"
+    ) {
+      return json(400, { error: "power, distance, intensity must be numbers" });
     }
 
     const accessToken = await getGoogleAccessToken();
     const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_SPREADSHEET_ID}`;
 
-    // Count existing data rows starting at row 7 to compute next "No"
-    const readUrl = `${baseUrl}/values/${SHEET_TAB}!A7:A`;
+    // Read existing rows from row 7 onward in column A to compute next "No"
+    const readUrl = `${baseUrl}/values/${SHEET_TAB_ENC}!A7:A`;
     const readRes = await fetch(readUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -170,7 +160,9 @@ Deno.serve(async (req) => {
       return json(502, { error: "Failed to read sheet", detail: readData });
     }
     const existing = (readData.values ?? []) as string[][];
-    const nextNo = existing.filter((r) => r[0] && String(r[0]).trim() !== "").length + 1;
+    const filledCount = existing.filter((r) => r[0] && String(r[0]).trim() !== "").length;
+    const nextNo = filledCount + 1;
+    const rowNumber = 7 + filledCount; // exact row we will write to
 
     const id = deriveIdentity(user);
     const row = [
@@ -178,34 +170,33 @@ Deno.serve(async (req) => {
       id.userId,
       id.username,
       id.fullName,
-      body.mode,
-      body.fs,
-      body.vs,
-      Number(body.fp.toFixed(1)),
-      "",
+      body.power,
+      body.distance,
+      body.intensity,
+      "", // TI hitung — left blank, filled by user
     ];
 
-    // Append starting from A7 so we never overwrite the header/instruction rows above.
-    const appendUrl =
-      `${baseUrl}/values/${SHEET_TAB}!A7:I` +
-      `:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-    const appendRes = await fetch(appendUrl, {
-      method: "POST",
+    // Write directly to the computed row to guarantee a known rowNumber for later updates.
+    const writeUrl =
+      `${baseUrl}/values/${SHEET_TAB_ENC}!A${rowNumber}:H${rowNumber}` +
+      `?valueInputOption=USER_ENTERED`;
+    const writeRes = await fetch(writeUrl, {
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ values: [row] }),
     });
-    const appendData = await appendRes.json();
-    if (!appendRes.ok) {
-      console.error("Sheets append error", appendData);
-      return json(502, { error: "Failed to append row", detail: appendData });
+    const writeData = await writeRes.json();
+    if (!writeRes.ok) {
+      console.error("Sheets write error", writeData);
+      return json(502, { error: "Failed to write row", detail: writeData });
     }
 
-    return json(200, { ok: true, no: nextNo, identity: id });
+    return json(200, { success: true, rowNumber, no: nextNo, identity: id });
   } catch (err) {
-    console.error("append-doppler-data error", err);
+    console.error("append-intensity-data error", err);
     return json(500, { error: (err as Error).message });
   }
 });
