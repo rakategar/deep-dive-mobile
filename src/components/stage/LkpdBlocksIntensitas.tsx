@@ -1,8 +1,31 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Volume2, MessageCircle, Lightbulb, Trash2, Database, Play } from "lucide-react";
+import { Volume2, MessageCircle, Lightbulb, Trash2, Database, Play, Check, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+/* ----- Shared helpers for spreadsheet fetch ----- */
+interface IntensityRow {
+  no: number;
+  rowNumber: number;
+  P: number;
+  r: number;
+  I: number;
+  TI: string;
+}
+
+async function fetchUserIntensityRows(token: string | null): Promise<IntensityRow[]> {
+  if (!token) return [];
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const res = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/list-intensity-data`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal memuat data");
+  return (data.rows ?? []) as IntensityRow[];
+}
+
 
 /* ============================ Tahap 1: Observasi ============================ */
 export const IntensitasObservationLKPD = () => (
@@ -41,20 +64,11 @@ export const IntensitasFormulateQuestionLKPD = () => (
   <div className="space-y-3">
     <div className="rounded-xl bg-card border border-border p-3">
       <p className="text-sm font-semibold flex items-center gap-2">
-        <MessageCircle className="h-4 w-4 text-lkpd" /> Pemandu Pertanyaan:
+        <MessageCircle className="h-4 w-4 text-lkpd" /> Mulai Perumusan Pertanyaan
       </p>
-      <div className="flex flex-wrap gap-2 mt-2">
-        {[
-          "Faktor apa yang mempengaruhi I...",
-          "Mengapa TI berubah saat...",
-          "Apa hubungan jarak dengan...",
-          "Bagaimana daya P mempengaruhi...",
-        ].map((c) => (
-          <span key={c} className="text-xs px-3 py-1 rounded-full bg-surface-soft-purple text-lkpd">
-            {c}
-          </span>
-        ))}
-      </div>
+      <p className="text-xs text-foreground/70 mt-1">
+        Tuliskan pertanyaan penelitianmu di kolom di bawah.
+      </p>
     </div>
     <p className="text-sm font-medium text-foreground">
       Tuliskan rumusan pertanyaan penelitianmu tentang intensitas bunyi:
@@ -97,32 +111,10 @@ export const IntensitasHypothesisLKPD = () => (
       </p>
       <p className="text-xs text-foreground/80 mt-1"><b>Karena</b> ...</p>
     </div>
-    <p className="text-sm font-medium">Prediksi hubungan antara variabel:</p>
-    <div className="grid grid-cols-2 gap-2">
-      {[
-        "I ∝ P (berbanding lurus)",
-        "I ∝ 1/r² (kuadrat terbalik)",
-        "TI naik saat r turun",
-        "TI turun saat r naik",
-      ].map((c) => (
-        <button
-          key={c}
-          className="rounded-xl border border-border bg-card text-xs px-2 py-2 hover:bg-secondary"
-        >
-          {c}
-        </button>
-      ))}
-    </div>
     <textarea
       placeholder="contoh: Jika jarak r diperbesar 2× dengan P tetap, maka I akan turun menjadi ¼-nya..."
       className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
     />
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <p className="font-semibold text-lkpd">✓ Daftar Periksa Hipotesis:</p>
-      <p>☐ Menyebutkan variabel bebas dengan jelas (P atau r)</p>
-      <p>☐ Menyebutkan variabel terikat dengan jelas (I atau TI)</p>
-      <p>☐ Menyertakan penalaran berbasis rumus I = P/4πr²</p>
-    </div>
   </div>
 );
 
@@ -309,6 +301,32 @@ export const IntensitasSimulatorLKPD = () => {
 
   const safeR = Math.max(r, 1);
   const I = P / (4 * Math.PI * safeR * safeR);
+
+  // Load existing rows from spreadsheet on mount
+  useEffect(() => {
+    if (!isSignedIn) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const rows = await fetchUserIntensityRows(token);
+        setEntries(
+          rows.map((r) => ({
+            no: r.no,
+            P: r.P,
+            r: r.r,
+            I: r.I,
+            TI: r.TI,
+            rowNumber: r.rowNumber,
+            saveStatus: "idle",
+          })),
+        );
+      } catch (err) {
+        console.error("load intensity rows error", err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
+
 
   const handleRecord = async () => {
     if (!isSignedIn || !user) {
@@ -579,44 +597,213 @@ export const IntensitasObservationVideoLKPD = () => {
 };
 
 
-export const IntensitasDataAnalysisLKPD = () => (
-  <div className="space-y-3">
-    <div className="rounded-xl bg-surface-soft-purple p-3">
-      <p className="text-sm font-semibold text-lkpd">📋 Data dari Pengumpulan Data</p>
-      <p className="text-xs text-foreground/75 mt-1">
-        Cek isi TI hitung — apakah hitungannya benar?
-      </p>
-      <textarea
-        placeholder="Salin/tempel data yang kamu kumpulkan di tahap Pengumpulan Data, atau deskripsikan tabel TI hitungmu di sini..."
-        className="w-full mt-2 rounded-lg border border-border bg-card p-2 text-xs min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
-      />
-      <button className="mt-2 text-xs px-3 py-1.5 rounded-lg bg-lkpd text-white font-semibold">
-        Cek Jawaban (Soal TI hitung)
-      </button>
-    </div>
+type IntensityCheckEntry = IntensityRow & { checkStatus?: "correct" | "wrong" | null };
 
-    <div className="rounded-xl bg-card border border-border p-3">
-      <p className="text-sm font-semibold">Deskripsikan pola yang kamu temukan dari data:</p>
-      <textarea
-        placeholder="contoh: Saat r dilipat dua, I turun menjadi seperempatnya. Pola ini sesuai hukum kuadrat terbalik. Saat P dinaikkan, TI bertambah ≈ 3 dB tiap P digandakan..."
-        className="w-full mt-2 rounded-lg border border-border bg-card p-2 text-xs min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
-      />
-    </div>
+const I0_REF = 1e-12;
+const expectedTI = (I: number) => 10 * Math.log10(I / I0_REF);
 
-    <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-      <p className="text-sm font-semibold text-emerald-800">
-        Apakah hipotesismu tentang Intensitas Bunyi:
-      </p>
-      <p className="text-xs text-emerald-900 mt-1">
-        Jelaskan dengan data yang kamu kumpulkan, apakah mendukung atau menyangkal?
-      </p>
-      <textarea
-        placeholder="contoh: Hipotesis saya didukung — data menunjukkan bahwa I ∝ 1/r²..."
-        className="w-full mt-2 rounded-lg border border-emerald-200 bg-card p-2 text-xs min-h-20 outline-none focus:ring-2 focus:ring-emerald-300"
-      />
+export const IntensitasDataAnalysisLKPD = () => {
+  const { isSignedIn, getToken } = useAuth();
+  const [entries, setEntries] = useState<IntensityCheckEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!isSignedIn) return;
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const rows = await fetchUserIntensityRows(token);
+      setEntries(rows.map((r) => ({ ...r, checkStatus: null })));
+      setChecked(false);
+    } catch (err) {
+      console.error("load intensity rows error", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isSignedIn, getToken]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const total = entries.length;
+  const filled = entries.filter((e) => String(e.TI).trim() !== "");
+  const filledCount = filled.length;
+
+  const handleCheck = () => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        const userVal = parseFloat(String(e.TI).replace(",", "."));
+        if (!isFinite(userVal)) return { ...e, checkStatus: null };
+        const expected = expectedTI(e.I);
+        // tolerance ±1.5 dB
+        const ok = Math.abs(userVal - expected) <= 1.5;
+        return { ...e, checkStatus: ok ? "correct" : "wrong" };
+      }),
+    );
+    setChecked(true);
+  };
+
+  const correctCount = entries.filter((e) => e.checkStatus === "correct").length;
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-emerald-300 bg-emerald-50/60 p-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
+            <Database className="h-4 w-4" /> Data dari Pengumpulan Data
+            {total > 0 && (
+              <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                {total} baris
+              </span>
+            )}
+          </p>
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="text-[11px] text-emerald-700 hover:underline disabled:opacity-50"
+          >
+            {loading ? "Memuat..." : "Muat ulang"}
+          </button>
+        </div>
+        <p className="text-xs text-emerald-900 mt-1">
+          Cek kolom <b>TI hitung</b> — apakah nilaimu sesuai rumus TI = 10 log(I/I₀)?
+        </p>
+
+        {loading && entries.length === 0 ? (
+          <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 text-center">
+            <p className="text-xs text-muted-foreground">Memuat data dari spreadsheet...</p>
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 flex flex-col items-center gap-2 text-center">
+            <Database className="h-8 w-8 text-muted-foreground/60" />
+            <p className="text-xs text-muted-foreground">Belum ada data.</p>
+            <p className="text-xs text-muted-foreground">
+              Kembali ke <b>Pengumpulan Data</b>, catat beberapa baris dan isi kolom TI hitung terlebih dahulu.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-3 overflow-x-auto rounded-lg border border-emerald-200 bg-card">
+            <table className="w-full text-xs">
+              <thead className="bg-muted">
+                <tr className="text-left">
+                  <th className="p-2 font-semibold">#</th>
+                  <th className="p-2 font-semibold">P (W)</th>
+                  <th className="p-2 font-semibold">r (m)</th>
+                  <th className="p-2 font-semibold">I (W/m²)</th>
+                  <th className="p-2 font-semibold">TI hitung (dB)</th>
+                  <th className="p-2 font-semibold w-8 text-center">✓</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e, i) => {
+                  const expected = expectedTI(e.I);
+                  const userVal = parseFloat(String(e.TI).replace(",", "."));
+                  const isCorrect = e.checkStatus === "correct";
+                  const isWrong = e.checkStatus === "wrong";
+                  return (
+                    <tr
+                      key={`${e.no}-${i}`}
+                      className={`border-t border-border ${
+                        checked
+                          ? isCorrect
+                            ? "bg-emerald-50/70"
+                            : isWrong
+                            ? "bg-rose-50/70"
+                            : ""
+                          : ""
+                      }`}
+                    >
+                      <td className="p-2">{e.no}</td>
+                      <td className="p-2">{e.P}</td>
+                      <td className="p-2">{e.r}</td>
+                      <td className="p-2 font-mono">
+                        {e.I >= 1e-4 ? e.I.toFixed(4) : e.I.toExponential(2)}
+                      </td>
+                      <td className="p-2">
+                        {checked && isWrong && isFinite(userVal) ? (
+                          <div className="space-y-0.5">
+                            <p className="text-rose-700 line-through">{e.TI} dB</p>
+                            <p className="text-emerald-700 font-semibold">
+                              ✓ {expected.toFixed(1)} dB
+                            </p>
+                          </div>
+                        ) : checked && isCorrect ? (
+                          <p className="text-emerald-700 font-semibold">{e.TI} dB</p>
+                        ) : (
+                          <p>{e.TI || <span className="text-muted-foreground">—</span>}</p>
+                        )}
+                      </td>
+                      <td className="p-2 text-center">
+                        {checked && isCorrect && <Check className="h-4 w-4 text-emerald-600 inline" />}
+                        {checked && isWrong && <X className="h-4 w-4 text-rose-600 inline" />}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <button
+          onClick={handleCheck}
+          disabled={filledCount === 0}
+          className={`w-full mt-3 rounded-lg py-2.5 text-sm font-semibold transition ${
+            filledCount === 0
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : "bg-lkpd text-white hover:opacity-90"
+          }`}
+        >
+          Cek Jawaban ({filledCount}/{total} TI terisi)
+        </button>
+
+        {checked && (
+          <div
+            className={`mt-3 rounded-lg p-3 text-xs text-center font-medium ${
+              correctCount === total && total > 0
+                ? "bg-emerald-100 text-emerald-800"
+                : correctCount === 0
+                ? "bg-rose-100 text-rose-800"
+                : "bg-amber-100 text-amber-800"
+            }`}
+          >
+            {correctCount === total && total > 0 ? "✅" : correctCount === 0 ? "❌" : "⚠️"}{" "}
+            <b>
+              {correctCount} / {total}
+            </b>{" "}
+            jawaban benar.
+            {correctCount < total && (
+              <p className="mt-1 font-normal">
+                Nilai hijau di bawah TI kamu adalah jawaban yang benar. Periksa rumus TI = 10 log(I/I₀).
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-3">
+        <p className="text-sm font-medium">Deskripsikan pola yang kamu temukan dari data:</p>
+        <textarea
+          placeholder="contoh: Saat r dilipat dua, I turun menjadi seperempatnya. Pola ini sesuai hukum kuadrat terbalik..."
+          className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
+      </div>
+
+      <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
+        <p className="text-sm font-semibold text-emerald-800">Evaluasi hipotesismu:</p>
+        <p className="text-xs text-emerald-900 mt-1">
+          Apakah data mendukung atau menyangkal hipotesismu? Jelaskan dengan bukti spesifik.
+        </p>
+        <textarea
+          placeholder="contoh: Hipotesis saya didukung — data menunjukkan bahwa I ∝ 1/r²..."
+          className="w-full mt-2 rounded-lg border border-emerald-200 bg-card p-2.5 text-xs min-h-20 outline-none focus:ring-2 focus:ring-emerald-300"
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ============================ Tahap 6: Kesimpulan ============================ */
 export const IntensitasConclusionLKPD = () => (
