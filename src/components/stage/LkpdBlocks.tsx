@@ -23,23 +23,14 @@ export const ObservationLKPD = () => (
       <span className="text-sm font-medium">Sirine Ambulans</span>
     </button>
     <p className="text-sm font-medium text-foreground mt-3">Catat hasil observasimu tentang Efek Doppler:</p>
-    <div className="rounded-xl border border-border bg-card p-3 text-xs text-foreground/75 space-y-1.5">
-      <p>Apa yang kamu perhatikan tentang perubahan bunyi? Pertimbangkan:</p>
-      <p>• Apa yang terjadi pada nada saat sumber mendekatimu?</p>
-      <p>• Bagaimana nada berubah saat sumber menjauh?</p>
-      <p>• Apakah sumber bunyi itu sendiri berubah bunyinya?</p>
-      <p>• Faktor apa yang memengaruhi seberapa besar perubahannya?</p>
-    </div>
-    <textarea
-      placeholder="Tuliskan observasimu di sini... contoh: Saat ambulans mendekat, suara sirine terdengar lebih tinggi dan makin keras, lalu tiba-tiba menjadi lebih rendah setelah melewati saya..."
-      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
-    />
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <b className="text-lkpd">💡 Pertanyaan Refleksi:</b>
-      <p className="mt-1">
-        Menurut kamu, apakah perubahan nada yang terdengar bergantung pada seberapa cepat sumber bergerak? Semakin
-        cepat berarti perubahan lebih besar? Tuliskan perkiraanmu!
+    <div className="rounded-xl border border-border bg-card p-3">
+      <p className="text-sm text-foreground/85">
+        Mengapa nada suara ambulans yang lewat terdengar lebih tinggi saat mendekat dan lebih rendah saat menjauh?
       </p>
+      <textarea
+        placeholder="Tuliskan observasimu di sini... contoh: Saat ambulans mendekat, suara sirine terdengar lebih tinggi dan makin keras, lalu tiba-tiba menjadi lebih rendah setelah melewati saya..."
+        className="w-full mt-2 rounded-lg border border-border bg-card p-3 text-xs text-foreground/75 min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+      />
     </div>
   </div>
 );
