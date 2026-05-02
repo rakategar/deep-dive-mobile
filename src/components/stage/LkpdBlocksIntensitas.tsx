@@ -97,32 +97,10 @@ export const IntensitasHypothesisLKPD = () => (
       </p>
       <p className="text-xs text-foreground/80 mt-1"><b>Karena</b> ...</p>
     </div>
-    <p className="text-sm font-medium">Prediksi hubungan antara variabel:</p>
-    <div className="grid grid-cols-2 gap-2">
-      {[
-        "I ∝ P (berbanding lurus)",
-        "I ∝ 1/r² (kuadrat terbalik)",
-        "TI naik saat r turun",
-        "TI turun saat r naik",
-      ].map((c) => (
-        <button
-          key={c}
-          className="rounded-xl border border-border bg-card text-xs px-2 py-2 hover:bg-secondary"
-        >
-          {c}
-        </button>
-      ))}
-    </div>
     <textarea
       placeholder="contoh: Jika jarak r diperbesar 2× dengan P tetap, maka I akan turun menjadi ¼-nya..."
       className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
     />
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <p className="font-semibold text-lkpd">✓ Daftar Periksa Hipotesis:</p>
-      <p>☐ Menyebutkan variabel bebas dengan jelas (P atau r)</p>
-      <p>☐ Menyebutkan variabel terikat dengan jelas (I atau TI)</p>
-      <p>☐ Menyertakan penalaran berbasis rumus I = P/4πr²</p>
-    </div>
   </div>
 );
 
