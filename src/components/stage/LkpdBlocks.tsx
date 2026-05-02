@@ -338,64 +338,47 @@ export const SimulatorLKPD = () => {
 };
 
 export const DataTableLKPD = () => {
-  const rows = [0, 30, 60, 90, 120, 150, 180, 200];
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <button className="rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-700 text-sm py-2">
-          🚗 → Mendekati
-        </button>
-        <button className="rounded-xl bg-card border border-border text-sm py-2">← 🚗 Menjauh</button>
-      </div>
-      <div className="rounded-xl border border-border overflow-hidden text-xs">
-        <div className="bg-surface-soft-blue p-2">
-          <p className="font-mono">🧮 Hitung fp menggunakan rumus Doppler</p>
-          <p className="font-mono text-foreground/70">vp = 0 m/s · fs = 500 Hz · v = 343 m/s</p>
+      <div className="rounded-xl border border-emerald-300 bg-emerald-50/60 p-3">
+        <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
+          <Database className="h-4 w-4" /> Data dari Pengumpulan Data
+        </p>
+        <p className="text-xs text-emerald-900 mt-1">
+          Cek kolom <b>f' hitung</b>, apakah nilainya sesuai rumus efek Doppler?
+        </p>
+        <div className="mt-3 rounded-lg bg-card border border-emerald-200 py-8 flex flex-col items-center gap-2 text-center">
+          <Database className="h-8 w-8 text-muted-foreground/60" />
+          <p className="text-xs text-muted-foreground">Belum ada data.</p>
+          <p className="text-xs text-muted-foreground">
+            Kembali ke <b>Pengumpulan Data</b>, catat beberapa baris dan isi kolom f' hitung terlebih dahulu.
+          </p>
         </div>
-        <table className="w-full">
-          <thead className="bg-muted">
-            <tr className="text-left">
-              <th className="p-2 font-semibold">No</th>
-              <th className="p-2 font-semibold">vₛ</th>
-              <th className="p-2 font-semibold">vₚ</th>
-              <th className="p-2 font-semibold">fs</th>
-              <th className="p-2 font-semibold">fp</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((vs, i) => (
-              <tr key={i} className="border-t border-border">
-                <td className="p-2">{i + 1}</td>
-                <td className="p-2 font-bold">{vs}</td>
-                <td className="p-2">0</td>
-                <td className="p-2">500</td>
-                <td className="p-2">
-                  <input className="w-16 rounded border border-border px-1 py-0.5" placeholder="hitung..." />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <button
+          disabled
+          className="w-full mt-3 rounded-lg bg-muted text-muted-foreground py-2 text-sm font-medium"
+        >
+          Cek Jawaban (0/0 f' terisi)
+        </button>
       </div>
-      <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-900">
-        <b>📈 Interpretasi Grafik:</b> Kurva non-linear naik — semakin besar vₛ, semakin tinggi f'. Penyebut (v − vₛ)
-        mengecil drastis mendekati vₛ = 343 m/s.
+
+      <div className="rounded-xl border border-border bg-card p-3">
+        <p className="text-sm font-medium">Deskripsikan apa yang ditunjukkan data:</p>
+        <textarea
+          placeholder="Analisis datamu. Ketika sumber mendekati pengamat, nilai f' yang saya hitung... Dibandingkan f₀, nilai f' saat mendekati... dan saat menjauh..."
+          className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
       </div>
-      <div className="space-y-2">
-        <p className="text-sm font-semibold">Identifikasi Hubungan vₛ dan f':</p>
-        {[
-          ["📈", "Berbanding Lurus", "vₛ naik → f' naik (sumber mendekati)"],
-          ["📉", "Berbanding Terbalik", "vₛ naik → f' turun (sumber menjauh)"],
-          ["—", "Tidak Ada Hubungan", "vₛ tidak memengaruhi f'"],
-        ].map(([e, t, d]) => (
-          <button key={t} className="w-full rounded-xl border border-border bg-card p-2.5 text-left flex gap-2">
-            <span>{e}</span>
-            <div>
-              <p className="text-sm font-semibold">{t}</p>
-              <p className="text-xs text-foreground/70">{d}</p>
-            </div>
-          </button>
-        ))}
+
+      <div className="rounded-xl border border-border bg-card p-3">
+        <p className="text-sm font-medium">Evaluasi hipotesismu:</p>
+        <p className="text-xs text-foreground/75 mt-1">
+          Apakah hipotesismu didukung oleh data? Jelaskan mengapa atau mengapa tidak, menggunakan bukti spesifik dari analisismu.
+        </p>
+        <textarea
+          placeholder="Hipotesisku menyatakan bahwa... Hasil perhitungan menunjukkan..."
+          className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
       </div>
     </div>
   );
