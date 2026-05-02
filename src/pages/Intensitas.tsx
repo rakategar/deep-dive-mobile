@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Info, Brain, BookOpen, FileText, Pencil, Waves, ChevronLeft } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { MobileShell } from "@/components/layout/MobileShell";
-import { stages } from "@/data/stages";
+import { stagesIntensitas } from "@/data/stagesIntensitas";
 
 const Intensitas = () => {
   const navigate = useNavigate();
@@ -75,10 +75,10 @@ const Intensitas = () => {
         {/* Journey */}
         <h3 className="font-semibold text-foreground mt-7 mb-3">6 Tahapan Pembelajaran Inquiry</h3>
         <div className="space-y-3">
-          {stages.map((s) => (
+          {stagesIntensitas.map((s) => (
             <Link
               key={s.id}
-              to={`/stage/${s.slug}`}
+              to={`/intensitas/stage/${s.slug}`}
               className="block rounded-3xl bg-card p-4 shadow-card active:scale-[0.99] transition"
             >
               <div className="flex items-start gap-4">
