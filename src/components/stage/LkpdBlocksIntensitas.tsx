@@ -800,22 +800,9 @@ export const IntensitasDataAnalysisLKPD = () => {
           placeholder="contoh: Hipotesis saya didukung — data menunjukkan bahwa I ∝ 1/r²..."
           className="w-full mt-2 rounded-lg border border-emerald-200 bg-card p-2.5 text-xs min-h-20 outline-none focus:ring-2 focus:ring-emerald-300"
         />
-      </div>
-
-    <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-      <p className="text-sm font-semibold text-emerald-800">
-        Apakah hipotesismu tentang Intensitas Bunyi:
-      </p>
-      <p className="text-xs text-emerald-900 mt-1">
-        Jelaskan dengan data yang kamu kumpulkan, apakah mendukung atau menyangkal?
-      </p>
-      <textarea
-        placeholder="contoh: Hipotesis saya didukung — data menunjukkan bahwa I ∝ 1/r²..."
-        className="w-full mt-2 rounded-lg border border-emerald-200 bg-card p-2 text-xs min-h-20 outline-none focus:ring-2 focus:ring-emerald-300"
-      />
     </div>
-  </div>
-);
+  );
+};
 
 /* ============================ Tahap 6: Kesimpulan ============================ */
 export const IntensitasConclusionLKPD = () => (
