@@ -89,25 +89,11 @@ export const HypothesisLKPD = () => (
       </p>
       <p className="text-xs text-foreground/80 mt-1"><b>Karena</b> ...</p>
     </div>
-    <p className="text-sm font-medium">Prediksi hubungan antara variabel Doppler:</p>
-    <div className="grid grid-cols-2 gap-2">
-      {["Berbanding lurus", "Berbanding terbalik", "f' > f₀ saat mendekati", "f' < f₀ saat menjauh"].map((c) => (
-        <button key={c} className="rounded-xl border border-border bg-card text-xs px-2 py-2 hover:bg-secondary">
-          {c}
-        </button>
-      ))}
-    </div>
+    <p className="text-sm font-medium">Tuliskan hipotesismu secara lengkap:</p>
     <textarea
       placeholder="contoh: Jika kecepatan sumber bunyi (vₛ) semakin besar saat mendekati pengamat, maka ..."
-      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
+      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-28 outline-none focus:ring-2 focus:ring-lkpd/30"
     />
-    <div className="rounded-xl bg-surface-soft-purple p-3 text-xs text-foreground/85">
-      <p className="font-semibold text-lkpd">✓ Daftar Periksa Hipotesis:</p>
-      <p>☐ Menyebutkan variabel bebas dengan jelas</p>
-      <p>☐ Menyebutkan variabel terikat dengan jelas</p>
-      <p>☐ Menyertakan penalaran berbasis rumus Doppler</p>
-      <p>☐ Membedakan kondisi mendekati dan menjauh</p>
-    </div>
   </div>
 );
 
