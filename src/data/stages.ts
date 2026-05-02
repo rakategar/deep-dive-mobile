@@ -1,5 +1,6 @@
 import { Eye, HelpCircle, Lightbulb, Database, FlaskConical, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 export interface Stage {
   id: number;
@@ -8,7 +9,7 @@ export interface Stage {
   titleId: string; // Indonesian
   blurbId: string;
   thinking: string;
-  thinkingDetailId: string;
+  thinkingDetailId: ReactNode;
   Icon: LucideIcon;
   colorVar: string; // tailwind bg-stage-N
   textColor: string;
