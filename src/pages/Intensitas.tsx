@@ -35,10 +35,6 @@ const Intensitas = () => {
             <Waves className="h-10 w-10 text-primary-foreground" strokeWidth={2.5} />
           </div>
           <h1 className="mt-4 text-3xl font-bold text-foreground tracking-tight">Intensitas Bunyi</h1>
-          <p className="text-sm text-muted-foreground mt-1">Kelas 11 Fisika</p>
-          <p className="text-sm text-muted-foreground text-center mt-1 px-4">
-            Perjalanan inquiry deep learning tentang Intensitas Bunyi
-          </p>
         </div>
 
 
@@ -81,8 +77,12 @@ const Intensitas = () => {
                   <s.Icon className="h-7 w-7 text-white" strokeWidth={2.2} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground font-mono">{String(s.id).padStart(2, "0")}</p>
-                  <p className="font-semibold text-foreground leading-tight">{s.titleId}</p>
+                  <p className="leading-tight">
+                    <span className="text-sm text-muted-foreground font-mono mr-1.5">
+                      {String(s.id).padStart(2, "0")}
+                    </span>
+                    <span className="font-bold text-foreground">{s.titleId}</span>
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1 leading-snug">{s.blurbId}</p>
                   <span className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary italic font-medium bg-primary/10 px-2 py-0.5 rounded-md">
                     <Target className="h-3 w-3" />
