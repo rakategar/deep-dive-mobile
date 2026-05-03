@@ -69,7 +69,7 @@ const Doppler = () => {
                     <span className="text-sm text-muted-foreground font-mono mr-1.5">
                       {String(s.id).padStart(2, "0")}
                     </span>
-                    <span className="font-bold italic text-foreground">{s.title}</span>
+                    <span className="font-bold text-foreground">{s.titleId}</span>
                   </p>
                   <p className="text-sm text-muted-foreground mt-1 leading-snug">{s.blurbId}</p>
                   <span className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary italic font-medium bg-primary/10 px-2 py-0.5 rounded-md">
