@@ -1,11 +1,21 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Info, BookOpen, FileText, Pencil, Waves, ChevronLeft, Target } from "lucide-react";
-import { UserButton } from "@clerk/clerk-react";
+import { UserButton, useAuth } from "@clerk/clerk-react";
+import { useEffect } from "react";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { stages } from "@/data/stages";
+import { prefetchUraian, DOPPLER_SHEETS } from "@/lib/uraian";
 
 const Doppler = () => {
   const navigate = useNavigate();
+  const { isSignedIn, getToken } = useAuth();
+
+  // Warm the answer cache so opening a stage shows saved text instantly.
+  useEffect(() => {
+    if (!isSignedIn) return;
+    getToken().then((token) => prefetchUraian(token, DOPPLER_SHEETS)).catch(() => {});
+  }, [isSignedIn, getToken]);
+
   return (
     <MobileShell>
       <div className="min-h-screen safe-px pt-12 pb-12">
