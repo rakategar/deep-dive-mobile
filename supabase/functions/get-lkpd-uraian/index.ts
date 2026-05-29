@@ -129,12 +129,14 @@ Deno.serve(async (req) => {
     const readUrl = `${baseUrl}/values/${encodedTab}!A2:${lastCol}?valueRenderOption=UNFORMATTED_VALUE`;
     const readRes = await fetch(readUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
 
+    // Sheet doesn't exist yet — return empty fields gracefully
     if (readRes.status === 400) {
       return json(200, { success: true, fields: {} });
     }
 
     const readData = await readRes.json();
     if (!readRes.ok) {
+      // Could be sheet-not-found error from Sheets API
       const errMsg = readData?.error?.message ?? "";
       if (errMsg.includes("Unable to parse range")) {
         return json(200, { success: true, fields: {} });
@@ -147,6 +149,7 @@ Deno.serve(async (req) => {
     const userRow = rows.find((r) => r[1] === user.id);
     if (!userRow) return json(200, { success: true, fields: {} });
 
+    // Col A=No, B=userId, C=username, D=fullName, E+=fields
     const fields: Record<string, string> = {};
     fieldNames.forEach((name, i) => {
       fields[name] = userRow[4 + i] !== undefined && userRow[4 + i] !== null

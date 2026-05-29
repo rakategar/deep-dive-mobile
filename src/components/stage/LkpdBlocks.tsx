@@ -7,7 +7,6 @@ import {
   Play,
   RotateCcw,
   Siren,
-  MessageCircle,
   Lightbulb,
   Target,
   Trash2,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { DopplerWaveCanvas, type DopplerWaveCanvasHandle } from "./DopplerWaveCanvas";
 import { toast } from "@/hooks/use-toast";
+import { saveUraian, getUraian } from "@/lib/uraian";
 
 interface DopplerEntry {
   no: number;
@@ -23,10 +23,12 @@ interface DopplerEntry {
   mode: "approach" | "leave";
   fs: number;
   vs: number;
-  fp: string; // student-entered
+  fp: string;
   saveStatus?: "idle" | "saving" | "saved" | "error";
   checkStatus?: "correct" | "wrong" | null;
 }
+
+type UraianStatus = "idle" | "saving" | "saved" | "error";
 
 const SOUND_SPEED = 343;
 
@@ -56,74 +58,200 @@ const fetchUserDopplerRows = async (token: string | null): Promise<DopplerEntry[
   }));
 };
 
+/** Small autosave status label shown below a textarea/input */
+const SaveStatus = ({ status }: { status: UraianStatus }) => {
+  if (status === "idle") return null;
+  if (status === "saving") return <p className="text-[10px] text-muted-foreground mt-0.5">Menyimpan...</p>;
+  if (status === "saved") return <p className="text-[10px] text-emerald-600 mt-0.5">Tersimpan ✓</p>;
+  return <p className="text-[10px] text-rose-600 mt-0.5">Gagal menyimpan</p>;
+};
 
-export const ObservationLKPD = () => (
-  <div className="space-y-3">
-    <p className="text-sm font-medium text-foreground">Pilih fenomena Efek Doppler untuk diamati:</p>
-    <button className="w-full rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-1">
-      <Siren className="h-5 w-5 text-foreground/70" />
-      <span className="text-sm font-medium">Sirine Ambulans</span>
-    </button>
-    <p className="text-sm font-medium text-foreground mt-3">Catat hasil observasimu tentang Efek Doppler:</p>
-    <div className="rounded-xl border border-border bg-card p-3">
-      <p className="text-sm text-foreground/85">
-        Mengapa nada suara ambulans yang lewat terdengar lebih tinggi saat mendekat dan lebih rendah saat menjauh?
-      </p>
-      <textarea
-        placeholder="Tuliskan observasimu di sini... contoh: Saat ambulans mendekat, suara sirine terdengar lebih tinggi dan makin keras, lalu tiba-tiba menjadi lebih rendah setelah melewati saya..."
-        className="w-full mt-2 rounded-lg border border-border bg-card p-3 text-xs text-foreground/75 min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
-      />
+/** Hook that provides debounced autosave for a single sheet's fields */
+function useUraianAutosave(sheetName: string, delay = 700) {
+  const { isSignedIn, getToken } = useAuth();
+  const [status, setStatus] = useState<UraianStatus>("idle");
+  const timerRef = useRef<number | undefined>(undefined);
+  const latestFieldsRef = useRef<Record<string, string>>({});
+
+  const load = useCallback(async (): Promise<Record<string, string>> => {
+    if (!isSignedIn) return {};
+    try {
+      const token = await getToken();
+      return await getUraian(token, sheetName);
+    } catch {
+      return {};
+    }
+  }, [isSignedIn, getToken, sheetName]);
+
+  const save = useCallback((fields: Record<string, string>) => {
+    latestFieldsRef.current = fields;
+    setStatus("idle");
+    clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(async () => {
+      if (!isSignedIn) return;
+      setStatus("saving");
+      try {
+        const token = await getToken();
+        await saveUraian(token, sheetName, latestFieldsRef.current);
+        setStatus("saved");
+      } catch (err) {
+        console.error(`Gagal menyimpan uraian ke sheet "${sheetName}"`, err);
+        setStatus("error");
+      }
+    }, delay);
+  }, [isSignedIn, getToken, sheetName, delay]);
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  return { load, save, status };
+}
+
+
+export const ObservationLKPD = () => {
+  const [observasi, setObservasi] = useState("");
+  const { load, save, status } = useUraianAutosave("Orientasi - Doppler");
+
+  useEffect(() => {
+    load().then((f) => { if (f.observasi) setObservasi(f.observasi); });
+  }, [load]);
+
+  const handleChange = (val: string) => {
+    setObservasi(val);
+    save({ observasi: val });
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-foreground">Pilih fenomena Efek Doppler untuk diamati:</p>
+      <button className="w-full rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-1">
+        <Siren className="h-5 w-5 text-foreground/70" />
+        <span className="text-sm font-medium">Sirine Ambulans</span>
+      </button>
+      <p className="text-sm font-medium text-foreground mt-3">Catat hasil observasimu tentang Efek Doppler:</p>
+      <div className="rounded-xl border border-border bg-card p-3">
+        <p className="text-sm text-foreground/85">
+          Mengapa nada suara ambulans yang lewat terdengar lebih tinggi saat mendekat dan lebih rendah saat menjauh?
+        </p>
+        <textarea
+          value={observasi}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="Tuliskan observasimu di sini... contoh: Saat ambulans mendekat, suara sirine terdengar lebih tinggi dan makin keras, lalu tiba-tiba menjadi lebih rendah setelah melewati saya..."
+          className="w-full mt-2 rounded-lg border border-border bg-card p-3 text-xs text-foreground/75 min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
+        />
+        <SaveStatus status={status} />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-export const FormulateQuestionLKPD = () => (
-  <div className="space-y-3">
-    <p className="text-sm font-medium text-foreground">Tuliskan pertanyaan penelitianmu:</p>
-    <textarea
-      placeholder="contoh: Bagaimana pengaruh kecepatan gerak sumber bunyi terhadap frekuensi yang terdengar oleh pengamat dalam efek Doppler?"
-      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
-    />
-    <div className="rounded-xl bg-surface-soft-blue p-3 space-y-2">
-      <p className="text-sm font-semibold flex items-center gap-2 text-info">
-        <Lightbulb className="h-4 w-4" /> Identifikasi Variabelmu
-      </p>
-      {[
-        ["Variabel Bebas (Yang kamu ubah):", "contoh: kecepatan sumber (vₛ), arah gerak..."],
-        ["Variabel Terikat (Yang kamu ukur):", "contoh: frekuensi pengamat, ..."],
-        ["Variabel Kontrol (Yang kamu jaga tetap):", "contoh: frekuensi sumber, kecepatan pengamat..."],
-      ].map(([label, ph]) => (
-        <div key={label}>
-          <p className="text-xs font-semibold text-info">{label}</p>
+export const FormulateQuestionLKPD = () => {
+  const [pertanyaan, setPertanyaan] = useState("");
+  const [varBebas, setVarBebas] = useState("");
+  const [varTerikat, setVarTerikat] = useState("");
+  const [varKontrol, setVarKontrol] = useState("");
+  const { load, save, status } = useUraianAutosave("Perumusan Masalah - Doppler");
+
+  useEffect(() => {
+    load().then((f) => {
+      if (f.pertanyaan_penelitian) setPertanyaan(f.pertanyaan_penelitian);
+      if (f.variabel_bebas) setVarBebas(f.variabel_bebas);
+      if (f.variabel_terikat) setVarTerikat(f.variabel_terikat);
+      if (f.variabel_kontrol) setVarKontrol(f.variabel_kontrol);
+    });
+  }, [load]);
+
+  const triggerSave = (overrides: Partial<Record<string, string>> = {}) => {
+    save({
+      pertanyaan_penelitian: pertanyaan,
+      variabel_bebas: varBebas,
+      variabel_terikat: varTerikat,
+      variabel_kontrol: varKontrol,
+      ...overrides,
+    });
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-foreground">Tuliskan pertanyaan penelitianmu:</p>
+      <textarea
+        value={pertanyaan}
+        onChange={(e) => { setPertanyaan(e.target.value); triggerSave({ pertanyaan_penelitian: e.target.value }); }}
+        placeholder="contoh: Bagaimana pengaruh kecepatan gerak sumber bunyi terhadap frekuensi yang terdengar oleh pengamat dalam efek Doppler?"
+        className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
+      />
+      <div className="rounded-xl bg-surface-soft-blue p-3 space-y-2">
+        <p className="text-sm font-semibold flex items-center gap-2 text-info">
+          <Lightbulb className="h-4 w-4" /> Identifikasi Variabelmu
+        </p>
+        <div>
+          <p className="text-xs font-semibold text-info">Variabel Bebas (Yang kamu ubah):</p>
           <input
-            placeholder={ph}
+            value={varBebas}
+            onChange={(e) => { setVarBebas(e.target.value); triggerSave({ variabel_bebas: e.target.value }); }}
+            placeholder="contoh: kecepatan sumber (vₛ), arah gerak..."
             className="w-full mt-1 rounded-lg border border-info/30 bg-card px-2.5 py-1.5 text-xs outline-none"
           />
         </div>
-      ))}
+        <div>
+          <p className="text-xs font-semibold text-info">Variabel Terikat (Yang kamu ukur):</p>
+          <input
+            value={varTerikat}
+            onChange={(e) => { setVarTerikat(e.target.value); triggerSave({ variabel_terikat: e.target.value }); }}
+            placeholder="contoh: frekuensi pengamat, ..."
+            className="w-full mt-1 rounded-lg border border-info/30 bg-card px-2.5 py-1.5 text-xs outline-none"
+          />
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-info">Variabel Kontrol (Yang kamu jaga tetap):</p>
+          <input
+            value={varKontrol}
+            onChange={(e) => { setVarKontrol(e.target.value); triggerSave({ variabel_kontrol: e.target.value }); }}
+            placeholder="contoh: frekuensi sumber, kecepatan pengamat..."
+            className="w-full mt-1 rounded-lg border border-info/30 bg-card px-2.5 py-1.5 text-xs outline-none"
+          />
+        </div>
+      </div>
+      <SaveStatus status={status} />
     </div>
-  </div>
-);
+  );
+};
 
-export const HypothesisLKPD = () => (
-  <div className="space-y-3">
-    <div className="rounded-xl bg-card border border-border p-3">
-      <p className="text-sm font-semibold">📝 Template Hipotesis Efek Doppler:</p>
-      <p className="text-xs text-foreground/80 mt-2">
-        <b>Jika</b> kecepatan sumber bunyi (vₛ) meningkat dan sumber bergerak mendekati pengamat...
-      </p>
-      <p className="text-xs text-foreground/80 mt-1">
-        <b>Maka</b> frekuensi yang terdengar (f') akan semakin tinggi dari frekuensi sumber (f₀)...
-      </p>
-      <p className="text-xs text-foreground/80 mt-1"><b>Karena</b> ...</p>
+export const HypothesisLKPD = () => {
+  const [hipotesis, setHipotesis] = useState("");
+  const { load, save, status } = useUraianAutosave("Perumusan Hipotesis - Doppler");
+
+  useEffect(() => {
+    load().then((f) => { if (f.hipotesis) setHipotesis(f.hipotesis); });
+  }, [load]);
+
+  const handleChange = (val: string) => {
+    setHipotesis(val);
+    save({ hipotesis: val });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl bg-card border border-border p-3">
+        <p className="text-sm font-semibold">📝 Template Hipotesis Efek Doppler:</p>
+        <p className="text-xs text-foreground/80 mt-2">
+          <b>Jika</b> kecepatan sumber bunyi (vₛ) meningkat dan sumber bergerak mendekati pengamat...
+        </p>
+        <p className="text-xs text-foreground/80 mt-1">
+          <b>Maka</b> frekuensi yang terdengar (f') akan semakin tinggi dari frekuensi sumber (f₀)...
+        </p>
+        <p className="text-xs text-foreground/80 mt-1"><b>Karena</b> ...</p>
+      </div>
+      <p className="text-sm font-medium">Tuliskan hipotesismu secara lengkap:</p>
+      <textarea
+        value={hipotesis}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder="contoh: Jika kecepatan sumber bunyi (vₛ) semakin besar saat mendekati pengamat, maka ..."
+        className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-28 outline-none focus:ring-2 focus:ring-lkpd/30"
+      />
+      <SaveStatus status={status} />
     </div>
-    <p className="text-sm font-medium">Tuliskan hipotesismu secara lengkap:</p>
-    <textarea
-      placeholder="contoh: Jika kecepatan sumber bunyi (vₛ) semakin besar saat mendekati pengamat, maka ..."
-      className="w-full rounded-xl border border-border bg-card p-3 text-sm min-h-28 outline-none focus:ring-2 focus:ring-lkpd/30"
-    />
-  </div>
-);
+  );
+};
 
 export const SimulatorLKPD = () => {
   const [direction, setDirection] = useState<"approach" | "leave">("approach");
@@ -139,10 +267,13 @@ export const SimulatorLKPD = () => {
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
 
+  // Essay field for analysis question
+  const [pertanyaanAnalisis, setPertanyaanAnalisis] = useState("");
+  const { load: loadUraian, save: saveUraian_, status: uraianStatus } = useUraianAutosave("Pengumpulan Data - Doppler");
+
   const safeVs = Math.min(vs, 300);
   const fsPercent = ((fs - 100) / 900) * 100;
 
-  // Load existing rows from spreadsheet on mount / when user becomes signed in
   useEffect(() => {
     if (!isSignedIn) return;
     let cancelled = false;
@@ -164,13 +295,13 @@ export const SimulatorLKPD = () => {
     };
   }, [isSignedIn, getToken]);
 
+  useEffect(() => {
+    loadUraian().then((f) => { if (f.pertanyaan_analisis) setPertanyaanAnalisis(f.pertanyaan_analisis); });
+  }, [loadUraian]);
+
   const handleRecord = async () => {
     if (!isSignedIn || !user) {
-      toast({
-        title: "Login dulu",
-        description: "Kamu perlu login untuk mencatat data ke spreadsheet.",
-        variant: "destructive",
-      });
+      toast({ title: "Login dulu", description: "Kamu perlu login untuk mencatat data ke spreadsheet.", variant: "destructive" });
       navigate("/login");
       return;
     }
@@ -182,43 +313,20 @@ export const SimulatorLKPD = () => {
         `https://${projectId}.supabase.co/functions/v1/append-doppler-data`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            mode: direction === "approach" ? "Mendekati" : "Menjauh",
-            fs,
-            vs: safeVs,
-          }),
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ mode: direction === "approach" ? "Mendekati" : "Menjauh", fs, vs: safeVs }),
         },
       );
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal mencatat data");
-
       setEntries((prev) => [
         ...prev,
-        {
-          no: data.no ?? prev.length + 1,
-          rowNumber: data.rowNumber,
-          mode: direction,
-          fs,
-          vs: safeVs,
-          fp: "",
-          saveStatus: "idle",
-        },
+        { no: data.no ?? prev.length + 1, rowNumber: data.rowNumber, mode: direction, fs, vs: safeVs, fp: "", saveStatus: "idle" },
       ]);
-      toast({
-        title: "Data berhasil dicatat",
-        description: `Hitung sendiri f' lalu isi di kolom f'.`,
-      });
+      toast({ title: "Data berhasil dicatat", description: `Hitung sendiri f' lalu isi di kolom f'.` });
     } catch (err: any) {
       console.error("catat-data error", err);
-      toast({
-        title: "Gagal mencatat",
-        description: err?.message ?? "Coba lagi sebentar.",
-        variant: "destructive",
-      });
+      toast({ title: "Gagal mencatat", description: err?.message ?? "Coba lagi sebentar.", variant: "destructive" });
     } finally {
       setRecording(false);
     }
@@ -227,9 +335,7 @@ export const SimulatorLKPD = () => {
   const updateFpOnServer = async (index: number, value: string) => {
     const entry = entries[index];
     if (!entry?.rowNumber) return;
-    setEntries((prev) =>
-      prev.map((e, i) => (i === index ? { ...e, saveStatus: "saving" } : e)),
-    );
+    setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, saveStatus: "saving" } : e)));
     try {
       const token = await getToken();
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -237,30 +343,21 @@ export const SimulatorLKPD = () => {
         `https://${projectId}.supabase.co/functions/v1/update-doppler-fp`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ rowNumber: entry.rowNumber, fp: value }),
         },
       );
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal menyimpan");
-      setEntries((prev) =>
-        prev.map((e, i) => (i === index ? { ...e, saveStatus: "saved" } : e)),
-      );
+      setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, saveStatus: "saved" } : e)));
     } catch (err) {
       console.error("doppler fp update error", err);
-      setEntries((prev) =>
-        prev.map((e, i) => (i === index ? { ...e, saveStatus: "error" } : e)),
-      );
+      setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, saveStatus: "error" } : e)));
     }
   };
 
   const handleFpChange = (index: number, value: string) => {
-    setEntries((prev) =>
-      prev.map((e, i) => (i === index ? { ...e, fp: value, saveStatus: "idle" } : e)),
-    );
+    setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, fp: value, saveStatus: "idle" } : e)));
     const timers = debounceTimers.current;
     if (timers[index]) window.clearTimeout(timers[index]);
     timers[index] = window.setTimeout(() => updateFpOnServer(index, value), 700);
@@ -268,13 +365,8 @@ export const SimulatorLKPD = () => {
 
   const [clearing, setClearing] = useState(false);
   const handleClear = async () => {
-    if (!isSignedIn) {
-      setEntries([]);
-      return;
-    }
-    if (!window.confirm("Hapus semua data Efek Doppler kamu dari spreadsheet? Tindakan ini tidak bisa dibatalkan.")) {
-      return;
-    }
+    if (!isSignedIn) { setEntries([]); return; }
+    if (!window.confirm("Hapus semua data Efek Doppler kamu dari spreadsheet? Tindakan ini tidak bisa dibatalkan.")) return;
     setClearing(true);
     try {
       const token = await getToken();
@@ -284,31 +376,22 @@ export const SimulatorLKPD = () => {
         `https://${projectId}.supabase.co/functions/v1/delete-doppler-rows`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ rowNumbers }),
         },
       );
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data?.error ?? "Gagal menghapus data");
       setEntries([]);
-      toast({
-        title: "Data dihapus",
-        description: `${data.cleared ?? 0} baris dihapus dari spreadsheet.`,
-      });
+      toast({ title: "Data dihapus", description: `${data.cleared ?? 0} baris dihapus dari spreadsheet.` });
     } catch (err: any) {
       console.error("delete doppler rows error", err);
-      toast({
-        title: "Gagal menghapus",
-        description: err?.message ?? "Coba lagi sebentar.",
-        variant: "destructive",
-      });
+      toast({ title: "Gagal menghapus", description: err?.message ?? "Coba lagi sebentar.", variant: "destructive" });
     } finally {
       setClearing(false);
     }
   };
+
   const handleReset = () => canvasRef.current?.reset();
 
   return (
@@ -324,43 +407,25 @@ export const SimulatorLKPD = () => {
             >
               {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
             </button>
-            <button
-              onClick={handleReset}
-              className="h-7 w-7 rounded-md bg-muted flex items-center justify-center"
-              aria-label="Reset"
-            >
+            <button onClick={handleReset} className="h-7 w-7 rounded-md bg-muted flex items-center justify-center" aria-label="Reset">
               <RotateCcw className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
-        <DopplerWaveCanvas
-          ref={canvasRef}
-          frequency={fs}
-          sourceSpeed={safeVs}
-          mode={direction}
-          isPlaying={isPlaying}
-        />
+        <DopplerWaveCanvas ref={canvasRef} frequency={fs} sourceSpeed={safeVs} mode={direction} isPlaying={isPlaying} />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => setDirection("approach")}
-          className={`rounded-xl border p-2 text-sm transition-colors flex flex-col items-center gap-1 ${
-            direction === "approach"
-              ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-              : "border-border bg-card text-foreground/70"
-          }`}
+          className={`rounded-xl border p-2 text-sm transition-colors flex flex-col items-center gap-1 ${direction === "approach" ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-border bg-card text-foreground/70"}`}
         >
           <span className="text-base">🚗 → 👂</span>
           <span>Mendekati</span>
         </button>
         <button
           onClick={() => setDirection("leave")}
-          className={`rounded-xl border p-2 text-sm transition-colors flex flex-col items-center gap-1 ${
-            direction === "leave"
-              ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-              : "border-border bg-card text-foreground/70"
-          }`}
+          className={`rounded-xl border p-2 text-sm transition-colors flex flex-col items-center gap-1 ${direction === "leave" ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-border bg-card text-foreground/70"}`}
         >
           <span className="text-base">👂 ← 🚗</span>
           <span>Menjauh</span>
@@ -372,15 +437,7 @@ export const SimulatorLKPD = () => {
           <span>Frekuensi Sumber (f₀)</span>
           <span className="font-bold text-info">{fs} Hz</span>
         </div>
-        <input
-          type="range"
-          min={100}
-          max={1000}
-          step={10}
-          value={fs}
-          onChange={(e) => setFs(Number(e.target.value))}
-          className="w-full accent-info"
-        />
+        <input type="range" min={100} max={1000} step={10} value={fs} onChange={(e) => setFs(Number(e.target.value))} className="w-full accent-info" />
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>100 Hz</span><span>{Math.round(fsPercent)}%</span><span>1000 Hz</span>
         </div>
@@ -388,14 +445,7 @@ export const SimulatorLKPD = () => {
           <span>Kecepatan Sumber (vₛ)</span>
           <span className="font-bold text-lkpd">{safeVs} m/s</span>
         </div>
-        <input
-          type="range"
-          min={0}
-          max={300}
-          value={vs}
-          onChange={(e) => setVs(Number(e.target.value))}
-          className="w-full accent-lkpd"
-        />
+        <input type="range" min={0} max={300} value={vs} onChange={(e) => setVs(Number(e.target.value))} className="w-full accent-lkpd" />
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>0 m/s (diam)</span><span>300 m/s</span>
         </div>
@@ -413,12 +463,7 @@ export const SimulatorLKPD = () => {
         <div className="flex items-center justify-between">
           <p className="font-semibold">Data yang Terkumpul</p>
           {entries.length > 0 && (
-            <button
-              onClick={handleClear}
-              disabled={clearing}
-              className="text-xs text-rose-600 flex items-center gap-1 hover:underline disabled:opacity-50"
-              title="Menghapus semua baris kamu di spreadsheet."
-            >
+            <button onClick={handleClear} disabled={clearing} className="text-xs text-rose-600 flex items-center gap-1 hover:underline disabled:opacity-50" title="Menghapus semua baris kamu di spreadsheet.">
               <Trash2 className="h-3 w-3" /> {clearing ? "Menghapus..." : "Hapus"}
             </button>
           )}
@@ -446,13 +491,7 @@ export const SimulatorLKPD = () => {
                   <tr key={`${e.no}-${i}`} className="border-t border-border animate-fade-in">
                     <td className="p-2">{i + 1}</td>
                     <td className="p-2">
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                          e.mode === "approach"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-rose-100 text-rose-700"
-                        }`}
-                      >
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${e.mode === "approach" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
                         {e.mode === "approach" ? "Mendekati" : "Menjauh"}
                       </span>
                     </td>
@@ -465,15 +504,9 @@ export const SimulatorLKPD = () => {
                         placeholder="hitung..."
                         className="w-24 rounded-md border border-amber-300 bg-card px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-300"
                       />
-                      {e.saveStatus === "saving" && (
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Menyimpan...</p>
-                      )}
-                      {e.saveStatus === "saved" && (
-                        <p className="text-[10px] text-emerald-600 mt-0.5">Tersimpan</p>
-                      )}
-                      {e.saveStatus === "error" && (
-                        <p className="text-[10px] text-rose-600 mt-0.5">Gagal menyimpan</p>
-                      )}
+                      {e.saveStatus === "saving" && <p className="text-[10px] text-muted-foreground mt-0.5">Menyimpan...</p>}
+                      {e.saveStatus === "saved" && <p className="text-[10px] text-emerald-600 mt-0.5">Tersimpan</p>}
+                      {e.saveStatus === "error" && <p className="text-[10px] text-rose-600 mt-0.5">Gagal menyimpan</p>}
                     </td>
                   </tr>
                 ))}
@@ -482,8 +515,7 @@ export const SimulatorLKPD = () => {
           </div>
         )}
         <p className="text-[11px] text-foreground/70 mt-2 leading-snug">
-          💡 Hitung sendiri nilai <b>f'</b> menggunakan rumus efek Doppler. Nilai akan tersimpan otomatis ke
-          spreadsheet dan muncul di tahap Pengujian Hipotesis.
+          💡 Hitung sendiri nilai <b>f'</b> menggunakan rumus efek Doppler. Nilai akan tersimpan otomatis ke spreadsheet dan muncul di tahap Pengujian Hipotesis.
         </p>
       </div>
 
@@ -495,9 +527,12 @@ export const SimulatorLKPD = () => {
           Bagaimana pola muka gelombang berbeda antara mendekati dan menjauh?
         </p>
         <textarea
+          value={pertanyaanAnalisis}
+          onChange={(e) => { setPertanyaanAnalisis(e.target.value); saveUraian_({ pertanyaan_analisis: e.target.value }); }}
           placeholder="Ketika sumber mendekati pengamat, pola muka gelombang terlihat... sedangkan saat menjauh..."
           className="w-full mt-2 rounded-lg border border-lkpd/30 bg-card p-2.5 text-xs min-h-20 outline-none focus:ring-2 focus:ring-lkpd/30"
         />
+        <SaveStatus status={uraianStatus} />
       </div>
     </div>
   );
@@ -508,6 +543,10 @@ export const DataTableLKPD = () => {
   const [entries, setEntries] = useState<DopplerEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [checked, setChecked] = useState(false);
+
+  const [deskripsi, setDeskripsi] = useState("");
+  const [evaluasi, setEvaluasi] = useState("");
+  const { load: loadUraian, save: saveUraian_, status: uraianStatus } = useUraianAutosave("Pengujian Hipotesis - Doppler");
 
   const refresh = useCallback(async () => {
     if (!isSignedIn) return;
@@ -524,9 +563,18 @@ export const DataTableLKPD = () => {
     }
   }, [isSignedIn, getToken]);
 
+  useEffect(() => { refresh(); }, [refresh]);
+
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    loadUraian().then((f) => {
+      if (f.deskripsi_data) setDeskripsi(f.deskripsi_data);
+      if (f.evaluasi_hipotesis) setEvaluasi(f.evaluasi_hipotesis);
+    });
+  }, [loadUraian]);
+
+  const triggerSave = (overrides: Record<string, string> = {}) => {
+    saveUraian_({ deskripsi_data: deskripsi, evaluasi_hipotesis: evaluasi, ...overrides });
+  };
 
   const filled = entries.filter((e) => String(e.fp).trim() !== "");
   const total = entries.length;
@@ -538,7 +586,6 @@ export const DataTableLKPD = () => {
         const userVal = parseFloat(String(e.fp).replace(",", "."));
         if (!isFinite(userVal)) return { ...e, checkStatus: null };
         const expected = computeExpectedFp(e.mode, e.fs, e.vs);
-        // 1% tolerance, min 0.5 Hz
         const tol = Math.max(0.5, expected * 0.01);
         const ok = Math.abs(userVal - expected) <= tol;
         return { ...e, checkStatus: ok ? "correct" : "wrong" };
@@ -556,16 +603,10 @@ export const DataTableLKPD = () => {
           <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
             <Database className="h-4 w-4" /> Data dari Pengumpulan Data
             {total > 0 && (
-              <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
-                {total} baris
-              </span>
+              <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">{total} baris</span>
             )}
           </p>
-          <button
-            onClick={refresh}
-            disabled={loading}
-            className="text-[11px] text-emerald-700 hover:underline disabled:opacity-50"
-          >
+          <button onClick={refresh} disabled={loading} className="text-[11px] text-emerald-700 hover:underline disabled:opacity-50">
             {loading ? "Memuat..." : "Muat ulang"}
           </button>
         </div>
@@ -605,29 +646,12 @@ export const DataTableLKPD = () => {
                   const isCorrect = e.checkStatus === "correct";
                   const isWrong = e.checkStatus === "wrong";
                   return (
-                    <tr
-                      key={`${e.no}-${i}`}
-                      className={`border-t border-border ${
-                        checked
-                          ? isCorrect
-                            ? "bg-emerald-50/70"
-                            : isWrong
-                            ? "bg-rose-50/70"
-                            : ""
-                          : ""
-                      }`}
-                    >
+                    <tr key={`${e.no}-${i}`} className={`border-t border-border ${checked ? isCorrect ? "bg-emerald-50/70" : isWrong ? "bg-rose-50/70" : "" : ""}`}>
                       <td className="p-2">{i + 1}</td>
                       <td className="p-2">{e.fs}</td>
                       <td className="p-2">{e.vs}</td>
                       <td className="p-2">
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            e.mode === "approach"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-rose-100 text-rose-700"
-                          }`}
-                        >
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${e.mode === "approach" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
                           {e.mode === "approach" ? "Mendekati" : "Menjauh"}
                         </span>
                       </td>
@@ -635,9 +659,7 @@ export const DataTableLKPD = () => {
                         {checked && isWrong && isFinite(userVal) ? (
                           <div className="space-y-0.5">
                             <p className="text-rose-700 line-through">{e.fp} Hz</p>
-                            <p className="text-emerald-700 font-semibold">
-                              ✓ {expected.toFixed(1)} Hz
-                            </p>
+                            <p className="text-emerald-700 font-semibold">✓ {expected.toFixed(1)} Hz</p>
                           </div>
                         ) : checked && isCorrect ? (
                           <p className="text-emerald-700 font-semibold">{e.fp} Hz</p>
@@ -660,34 +682,17 @@ export const DataTableLKPD = () => {
         <button
           onClick={handleCheck}
           disabled={filledCount === 0}
-          className={`w-full mt-3 rounded-lg py-2.5 text-sm font-semibold transition ${
-            filledCount === 0
-              ? "bg-muted text-muted-foreground cursor-not-allowed"
-              : "bg-lkpd text-white hover:opacity-90"
-          }`}
+          className={`w-full mt-3 rounded-lg py-2.5 text-sm font-semibold transition ${filledCount === 0 ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-lkpd text-white hover:opacity-90"}`}
         >
           Cek Jawaban ({filledCount}/{total} f' terisi)
         </button>
 
         {checked && (
-          <div
-            className={`mt-3 rounded-lg p-3 text-xs text-center font-medium ${
-              correctCount === total && total > 0
-                ? "bg-emerald-100 text-emerald-800"
-                : correctCount === 0
-                ? "bg-rose-100 text-rose-800"
-                : "bg-amber-100 text-amber-800"
-            }`}
-          >
+          <div className={`mt-3 rounded-lg p-3 text-xs text-center font-medium ${correctCount === total && total > 0 ? "bg-emerald-100 text-emerald-800" : correctCount === 0 ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-800"}`}>
             {correctCount === total && total > 0 ? "✅" : correctCount === 0 ? "❌" : "⚠️"}{" "}
-            <b>
-              {correctCount} / {total}
-            </b>{" "}
-            jawaban benar.
+            <b>{correctCount} / {total}</b> jawaban benar.
             {correctCount < total && (
-              <p className="mt-1 font-normal">
-                Nilai hijau di bawah f' kamu adalah jawaban yang benar. Coba periksa rumus Doppler-mu!
-              </p>
+              <p className="mt-1 font-normal">Nilai hijau di bawah f' kamu adalah jawaban yang benar. Coba periksa rumus Doppler-mu!</p>
             )}
           </div>
         )}
@@ -696,6 +701,8 @@ export const DataTableLKPD = () => {
       <div className="rounded-xl border border-border bg-card p-3">
         <p className="text-sm font-medium">Deskripsikan apa yang ditunjukkan data:</p>
         <textarea
+          value={deskripsi}
+          onChange={(e) => { setDeskripsi(e.target.value); triggerSave({ deskripsi_data: e.target.value }); }}
           placeholder="Analisis datamu. Ketika sumber mendekati pengamat, nilai f' yang saya hitung... Dibandingkan f₀, nilai f' saat mendekati... dan saat menjauh..."
           className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
         />
@@ -707,41 +714,65 @@ export const DataTableLKPD = () => {
           Apakah hipotesismu didukung oleh data? Jelaskan mengapa atau mengapa tidak, menggunakan bukti spesifik dari analisismu.
         </p>
         <textarea
+          value={evaluasi}
+          onChange={(e) => { setEvaluasi(e.target.value); triggerSave({ evaluasi_hipotesis: e.target.value }); }}
           placeholder="Hipotesisku menyatakan bahwa... Hasil perhitungan menunjukkan..."
           className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-24 outline-none focus:ring-2 focus:ring-lkpd/30"
         />
       </div>
+      <SaveStatus status={uraianStatus} />
     </div>
   );
 };
 
-export const ConclusionLKPD = () => (
-  <div className="space-y-3">
-    <div className="rounded-xl bg-card border border-border p-3">
-      <p className="text-sm font-semibold flex items-center gap-2">
-        <Target className="h-4 w-4 text-lkpd" /> Kesimpulan Ilmiah
-      </p>
-      <p className="text-xs text-foreground/75 mt-1">Rangkum temuanmu tentang Efek Doppler dari seluruh proses inkuiri.</p>
-      <textarea
-        placeholder="Berdasarkan penyelidikanku, aku menemukan bahwa Efek Doppler menyebabkan... Data menunjukkan bahwa saat kecepatan sumber meningkat... Rumus Efek Doppler terbukti karena... Hipotesisku tentang hubungan vₛ dan f'..."
-        className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-28 outline-none"
-      />
+export const ConclusionLKPD = () => {
+  const [kesimpulan, setKesimpulan] = useState("");
+  const [koneksi, setKoneksi] = useState("");
+  const { load, save, status } = useUraianAutosave("Penarikan Kesimpulan - Doppler");
+
+  useEffect(() => {
+    load().then((f) => {
+      if (f.kesimpulan_ilmiah) setKesimpulan(f.kesimpulan_ilmiah);
+      if (f.koneksi_aplikasi_nyata) setKoneksi(f.koneksi_aplikasi_nyata);
+    });
+  }, [load]);
+
+  const triggerSave = (overrides: Record<string, string> = {}) => {
+    save({ kesimpulan_ilmiah: kesimpulan, koneksi_aplikasi_nyata: koneksi, ...overrides });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl bg-card border border-border p-3">
+        <p className="text-sm font-semibold flex items-center gap-2">
+          <Target className="h-4 w-4 text-lkpd" /> Kesimpulan Ilmiah
+        </p>
+        <p className="text-xs text-foreground/75 mt-1">Rangkum temuanmu tentang Efek Doppler dari seluruh proses inkuiri.</p>
+        <textarea
+          value={kesimpulan}
+          onChange={(e) => { setKesimpulan(e.target.value); triggerSave({ kesimpulan_ilmiah: e.target.value }); }}
+          placeholder="Berdasarkan penyelidikanku, aku menemukan bahwa Efek Doppler menyebabkan... Data menunjukkan bahwa saat kecepatan sumber meningkat... Rumus Efek Doppler terbukti karena... Hipotesisku tentang hubungan vₛ dan f'..."
+          className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-28 outline-none"
+        />
+      </div>
+      <div className="rounded-xl bg-card border border-border p-3">
+        <p className="text-sm font-semibold flex items-center gap-2">
+          <Lightbulb className="h-4 w-4 text-amber-500" /> Koneksi Aplikasi Nyata
+        </p>
+        <p className="text-xs text-foreground/75 mt-1">
+          Pilih salah satu aplikasi di atas dan jelaskan bagaimana prinsip Efek Doppler yang kamu pelajari diterapkan dalam teknologi tersebut.
+        </p>
+        <textarea
+          value={koneksi}
+          onChange={(e) => { setKoneksi(e.target.value); triggerSave({ koneksi_aplikasi_nyata: e.target.value }); }}
+          placeholder="Prinsip Efek Doppler yang kupelajari dapat menjelaskan..."
+          className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-20 outline-none"
+        />
+      </div>
+      <SaveStatus status={status} />
     </div>
-    <div className="rounded-xl bg-card border border-border p-3">
-      <p className="text-sm font-semibold flex items-center gap-2">
-        <Lightbulb className="h-4 w-4 text-amber-500" /> Koneksi Aplikasi Nyata
-      </p>
-      <p className="text-xs text-foreground/75 mt-1">
-        Pilih salah satu aplikasi di atas dan jelaskan bagaimana prinsip Efek Doppler yang kamu pelajari diterapkan
-        dalam teknologi tersebut.
-      </p>
-      <textarea
-        placeholder="Prinsip Efek Doppler yang kupelajari dapat menjelaskan..."
-        className="w-full mt-2 rounded-lg border border-border bg-card p-2.5 text-xs min-h-20 outline-none"
-      />
-    </div>
-  </div>
-);
+  );
+};
 
 export const lkpdContent: Record<string, () => JSX.Element> = {
   observation: ObservationLKPD,

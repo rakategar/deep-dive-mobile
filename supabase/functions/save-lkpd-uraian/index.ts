@@ -7,6 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Maps sheet name → ordered field names (determines column order starting at col E)
 const SHEET_FIELDS: Record<string, string[]> = {
   "Orientasi - Doppler": ["observasi"],
   "Perumusan Masalah - Doppler": ["pertanyaan_penelitian", "variabel_bebas", "variabel_terikat", "variabel_kontrol"],
@@ -111,6 +112,7 @@ function deriveIdentity(user: any) {
   return { userId: user?.id ?? "", username, fullName };
 }
 
+// Ensure the sheet tab exists; create it via batchUpdate if not found.
 async function ensureSheetExists(accessToken: string, sheetName: string): Promise<void> {
   const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_SPREADSHEET_ID}`;
   const metaRes = await fetch(`${baseUrl}?fields=sheets.properties.title`, {
@@ -120,6 +122,7 @@ async function ensureSheetExists(accessToken: string, sheetName: string): Promis
   if (!metaRes.ok) throw new Error(`Failed to read spreadsheet metadata: ${JSON.stringify(meta)}`);
   const existing: string[] = (meta.sheets ?? []).map((s: any) => s.properties?.title ?? "");
   if (existing.includes(sheetName)) return;
+
   const batchRes = await fetch(`${baseUrl}:batchUpdate`, {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
@@ -158,6 +161,8 @@ Deno.serve(async (req) => {
 
     const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_SPREADSHEET_ID}`;
     const encodedTab = encodeURIComponent(body.sheetName);
+
+    // Read all existing rows to find if this user already has a row (col A:D+fields)
     const lastCol = String.fromCharCode("E".charCodeAt(0) + fieldNames.length - 1);
     const readUrl = `${baseUrl}/values/${encodedTab}!A2:${lastCol}?valueRenderOption=UNFORMATTED_VALUE`;
     const readRes = await fetch(readUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -168,18 +173,22 @@ Deno.serve(async (req) => {
     }
 
     const existingRows = (readData.values ?? []) as any[][];
+    // Find user row: col B (index 1) = userId
     let foundRowNumber: number | null = null;
     for (let i = 0; i < existingRows.length; i++) {
       if (existingRows[i][1] === id.userId) {
-        foundRowNumber = 2 + i;
+        foundRowNumber = 2 + i; // row 2 is data start (row 1 = header)
         break;
       }
     }
 
+    // Build the values row: [No, userId, username, fullName, ...fieldValues]
     const fieldValues = fieldNames.map((f) => body.fields[f] ?? "");
+
     const writeUrl = foundRowNumber
       ? `${baseUrl}/values/${encodedTab}!A${foundRowNumber}:${lastCol}${foundRowNumber}?valueInputOption=USER_ENTERED`
       : `${baseUrl}/values/${encodedTab}!A${2 + existingRows.length}:${lastCol}${2 + existingRows.length}?valueInputOption=USER_ENTERED`;
+
     const no = foundRowNumber ? (existingRows[foundRowNumber - 2]?.[0] ?? existingRows.length) : existingRows.length + 1;
     const rowData = [no, id.userId, id.username, id.fullName, ...fieldValues];
 
