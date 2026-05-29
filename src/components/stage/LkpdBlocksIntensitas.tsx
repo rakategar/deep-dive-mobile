@@ -63,7 +63,8 @@ function useUraianAutosave(sheetName: string, delay = 700) {
         const token = await getToken();
         await saveUraian(token, sheetName, latestFieldsRef.current);
         setStatus("saved");
-      } catch {
+      } catch (err) {
+        console.error(`Gagal menyimpan uraian ke sheet "${sheetName}"`, err);
         setStatus("error");
       }
     }, delay);

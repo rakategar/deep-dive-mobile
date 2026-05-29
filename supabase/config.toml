@@ -1,1 +1,35 @@
 project_id = "nlmhnfjrvgwlkwnnwiuk"
+
+# These Edge Functions authenticate users with Clerk tokens (not Supabase JWTs),
+# so the Supabase gateway must NOT verify the JWT — each function verifies the
+# Clerk token itself via verifyClerkUser(). Without verify_jwt = false the gateway
+# rejects the Clerk token with 401 before the function code runs.
+[functions.append-doppler-data]
+verify_jwt = false
+
+[functions.list-doppler-data]
+verify_jwt = false
+
+[functions.update-doppler-fp]
+verify_jwt = false
+
+[functions.delete-doppler-rows]
+verify_jwt = false
+
+[functions.append-intensity-data]
+verify_jwt = false
+
+[functions.list-intensity-data]
+verify_jwt = false
+
+[functions.update-intensity-ti]
+verify_jwt = false
+
+[functions.delete-intensity-rows]
+verify_jwt = false
+
+[functions.save-lkpd-uraian]
+verify_jwt = false
+
+[functions.get-lkpd-uraian]
+verify_jwt = false
